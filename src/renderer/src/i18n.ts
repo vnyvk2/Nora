@@ -4,12 +4,14 @@ import { initReactI18next } from 'react-i18next';
 import en from './assets/locales/en/en.json';
 import tr from './assets/locales/tr/tr.json';
 import vi from './assets/locales/vi/vi.json';
+import ptBR from './assets/locales/pt-br/pt-br.json';
 import type { DropdownOption } from './components/Dropdown';
 
 export const resources = {
   en: { translation: en },
   tr: { translation: tr },
-  vi: { translation: vi }
+  vi: { translation: vi },
+  'pt-BR': { translation: ptBR }
 } as const;
 
 // export type LanguageCodes = keyof typeof resources;
@@ -17,7 +19,8 @@ export const resources = {
 export const supportedLanguagesDropdownOptions: DropdownOption<keyof typeof resources>[] = [
   { label: `English`, value: 'en' },
   { label: `Turkish`, value: 'tr' },
-  { label: `Vietnamese`, value: 'vi' }
+  { label: `Vietnamese`, value: 'vi' },
+  { label: `Português (Brasil)`, value: 'pt-BR' }
   // { label: `Francais`, value: 'fr' },
 ];
 
