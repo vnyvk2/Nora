@@ -235,7 +235,7 @@ const createWindow = async () => {
     frame: false,
     backgroundColor: await getBackgroundColor(),
     icon: appIcon,
-    titleBarStyle: 'hidden',
+    titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'hidden',
     show: false
   });
 
