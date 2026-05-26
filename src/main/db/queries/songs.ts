@@ -213,6 +213,8 @@ export const getAllSongs = async (
       if (sortType === 'dateModifiedAscending') return [asc(songs.fileModifiedAt), asc(songs.title)];
       if (sortType === 'dateModifiedDescending') return [desc(songs.fileModifiedAt), asc(songs.title)];
       if (sortType === 'addedOrder') return [desc(songs.createdAt), asc(songs.title)];
+      if (sortType === 'mostSkipped') return [desc(songs.skipCount), asc(songs.title)];
+      if (sortType === 'leastSkipped') return [asc(songs.skipCount), asc(songs.title)];
 
       return [];
     },
@@ -653,6 +655,12 @@ export const getAllSongsInFavorite = async (
       if (sortType === 'dateModifiedDescending')
         return [desc(songs.fileModifiedAt), asc(songs.title), ...orders];
       if (sortType === 'addedOrder') return orders;
+<<<<<<< HEAD
+=======
+      if (sortType === 'mostSkipped') return [desc(songs.skipCount), asc(songs.title), ...orders];
+      if (sortType === 'leastSkipped') return [asc(songs.skipCount), asc(songs.title), ...orders];
+      // Add other sort types as needed
+>>>>>>> dc8a9736 (fix(#438): add sort by most skipped songs)
       return orders; // Default sorting
     },
     limit: limit,
