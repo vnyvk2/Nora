@@ -215,7 +215,8 @@
   "song": {
     "showInFileExplorer": "Afficher dans l'explorateur",
     "artwork": "Illustration de la chanson",
-    "selectedSongCount": "{{count}} $t(common.song, {\"count\":{{count}}}) sélectionnée",
+    "selectedSongCount_one": "{{count}} $t(common.song, {\"count\":{{count}}}) sélectionnée",
+    "selectedSongCount_other": "{{count}} $t(common.song, {\"count\":{{count}}}) sélectionnées",
     "likeSong": "Ajouter aux favoris",
     "unlikeSong": "Retirer des favoris",
     "toggleLikeSongs": "Ajouter/retirer des chansons aux favoris",
@@ -239,13 +240,15 @@
     "toggleLikeArtists": "Ajouter/retirer des artistes aux favoris",
     "likeArtist": "Ajouter l'artiste aux favoris",
     "dislikeArtist": "Retirer l'artiste des favoris",
-    "selectedArtistCount": "{{count}} $t(common.artist, {\"count\":{{count}}}) sélectionné"
+    "selectedArtistCount_one": "{{count}} $t(common.artist, {\"count\":{{count}}}) sélectionné",
+    "selectedArtistCount_other": "{{count}} $t(common.artist, {\"count\":{{count}}}) sélectionnés"
   },
 
   "folder": {
     "toggleBlacklistFolder": "Basculer le dossier en liste noire",
     "blacklistFolder": "Mettre le dossier en liste noire",
-    "selectedFolderCount": "{{count}} $t(common.folder, {\"count\":{{count}}}) sélectionné",
+    "selectedFolderCount_one": "{{count}} $t(common.folder, {\"count\":{{count}}}) sélectionné",
+    "selectedFolderCount_other": "{{count}} $t(common.folder, {\"count\":{{count}}}) sélectionnés",
     "selectedParentFolderCount_one": "{{count}} dossier parent sélectionné",
     "selectedParentFolderCount_other": "{{count}} dossiers parents sélectionnés",
     "directoryCount_one": "{{count}} répertoire",
@@ -264,16 +267,19 @@
     "deleteSelectedPlaylists": "Supprimer la/les liste(s) de lecture sélectionnée(s)",
     "deletePlaylist_one": "Supprimer la liste de lecture",
     "deletePlaylist_other": "Supprimer les listes de lecture",
-    "selectedPlaylistCount": "{{count}} $t(common.playlist, {\"count\":{{count}}}) sélectionnée",
+    "selectedPlaylistCount_one": "{{count}} $t(common.playlist, {\"count\":{{count}}}) sélectionnée",
+    "selectedPlaylistCount_other": "{{count}} $t(common.playlist, {\"count\":{{count}}}) sélectionnées",
     "empty": "Cette liste de lecture semble vide."
   },
 
   "album": {
-    "selectedAlbumCount": "{{count}} $t(common.album, {\"count\":{{count}}}) sélectionné"
+    "selectedAlbumCount_one": "{{count}} $t(common.album, {\"count\":{{count}}}) sélectionné",
+    "selectedAlbumCount_other": "{{count}} $t(common.album, {\"count\":{{count}}}) sélectionnés"
   },
 
   "genre": {
-    "selectedGenreCount": "{{count}} $t(common.genre, {\"count\":{{count}}}) sélectionné"
+    "selectedGenreCount_one": "{{count}} $t(common.genre, {\"count\":{{count}}}) sélectionné",
+    "selectedGenreCount_other": "{{count}} $t(common.genre, {\"count\":{{count}}}) sélectionnés"
   },
 
   "homePage": {
@@ -294,7 +300,7 @@
 
     "noSongsAvailable": "Aucune chanson disponible",
     "stayCalm": "Restez calme",
-    "favoritesAndRecaps": "Favoris et récapitulatifs"
+    "favoritesAndRecaps": "Favoris et bilans"
   },
 
   "searchPage": {
@@ -443,7 +449,7 @@
     "shuffleArtworkFromSongCovers": "Activer le mélange des illustrations composites.",
 
     "accessibility": "Accessibilité",
-    "reducedMotionDescription": "Supprime les animations de l'application pour réduire la sollicitation.",
+    "reducedMotionDescription": "Supprime les animations de l'application. L'application sera moins fluide.",
     "enableReducedMotion": "Activer la réduction des mouvements",
 
     "performance": "Performances",
@@ -644,8 +650,8 @@
     "pendingUpdateAvailable": "Une mise à jour des métadonnées est en attente.",
     "saveTagsNotSupportedTitle": "Non supporté",
     "saveTagsNotSupportedDescription": "<P1>Nora ne supporte pas l'édition des métadonnées en format <Format/>.</P1><P2>Seul le format <SupportedFormat/> est supporté.",
-    "albumArtistNotMentioned": "La chanson fait partie de l'album `{{title}}` mais ses artistes ne sont pas spécifiés comme artistes de l'album.",
-    "songAlbumArtistMismatch": "Les artistes sélectionnés ne correspondent pas aux artistes de l'album sélectionné.",
+    "albumArtistNotMentioned": "La chanson fait déjà partie de l'album `{{title}}` mais le(s) artiste(s) '{{artists}}' n'est/sont pas spécifié(s) comme artiste(s) de l'album.",
+    "songAlbumArtistMismatch": "Le(s) artiste(s) d'album sélectionné(s) '{{albumArtists}}' ne correspond(ent) pas à l'album sélectionné '{{albumTitle}}' dont le(s) artiste(s) est/sont '{{songAlbumArtists}}'.",
     "searchForArtists": "Rechercher des artistes",
     "searchForAlbums": "Rechercher des albums",
     "searchForGenres": "Rechercher des genres",
@@ -762,8 +768,8 @@
   },
 
   "addSongsToPlaylistsPrompt": {
-    "songsAddedToPlaylists": "{{count}} chanson(s) ajoutée(s) à {{playlistCount}} liste(s)",
-    "selectPlaylistsToAdd": "Sélectionnez les listes de destination",
+    "songsAddedToPlaylists": "$t(common.songWithCount, {\"count\":{{count}}}) ajoutée(s) à $t(common.playlistWithCount, {\"count\":{{playlistCount}}})",
+    "selectPlaylistsToAdd": "Sélectionnez les listes de destination pour $t(common.songWithCount, {\"count\":{{count}}})",
     "duplicationNotice": "Les chansons déjà présentes seront ignorées."
   },
 
@@ -773,15 +779,15 @@
     "message_other": "Vous allez mettre ces chansons en liste noire. Vous pourrez les restaurer en cliquant droit puis '$t(song.deblacklist)'.",
     "effectTitle": "Effet de la liste noire",
     "effect1": "Apparaîtra grisée avec un symbole '<span/>'.",
-    "effect2": "Ne sera pas ajoutée automatiquement à la file, sauf si vous l'ajoutez explicitement.",
+    "effect2": "Ne sera pas ajoutée automatiquement à la file, sauf si vous l'ajoutez explicitement via <span>'$t(common.shuffleAndPlay)'</span> ou <span>'$t(common.playAll)'</span>.",
     "effect3": "Peut toujours être lue via double-clic, '$t(common.play)' ou '$t(common.playNext)'.",
     "songsBlacklisted": "$t(common.songWithCount, {\"count\":{{count}}}) mise(s) en liste noire"
   },
 
   "blacklistFolderConfirmPrompt": {
     "title": "Confirmer la mise en liste noire de $t(common.folderWithCount, {\"count\":{{count}}})",
-    "message_one": "Vous allez mettre ce dossier en liste noire. Vous pourrez le restaurer depuis la page Dossiers.",
-    "message_other": "Vous allez mettre ces dossiers en liste noire. Vous pourrez les restaurer depuis la page Dossiers.",
+    "message_one": "Vous allez mettre ce dossier en liste noire. Vous pourrez le restaurer depuis la page Dossiers en cliquant droit et en sélectionnant '$t(song.deblacklist)'.",
+    "message_other": "Vous allez mettre ces dossiers en liste noire. Vous pourrez les restaurer depuis la page Dossiers en cliquant droit et en sélectionnant '$t(song.deblacklist)'.",
     "effectTitle": "Effet de la liste noire sur un dossier",
     "effect1": "Apparaîtra grisé avec un symbole '<span/>'.",
     "effect2": "Les chansons liées seront aussi en liste noire.",
@@ -951,7 +957,7 @@
     "tokenUpdateFailed": "Échec de la mise à jour.",
     "tokenMissingCharacters": "Le jeton doit contenir 54 caractères ({{count}} requis supplémentaires).",
     "tokenIncorrectCharacters": "Le jeton ne doit contenir que des caractères alphanumériques.",
-    "savedTokenAvailableMessage": "<Title><span/> Un jeton sauvegardé existe.</Title><p> Un jeton Musixmatch valide est déjà disponible.</p>"
+    "savedTokenAvailableMessage": "<Title><span/> Un jeton sauvegardé existe.</Title><p> Un jeton Musixmatch valide sauvegardé est déjà disponible dans Nora.</p> <p> Vous n'avez besoin de changer le jeton que si le service ne fonctionne pas correctement.</p>"
   },
 
   "customizeSelectedMetadataPrompt": {
