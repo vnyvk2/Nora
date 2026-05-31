@@ -17,15 +17,17 @@ import { albumQuery } from '@renderer/queries/albums';
 import { artistQuery } from '@renderer/queries/aritsts';
 import { songQuery } from '@renderer/queries/songs';
 import { store } from '@renderer/store/store';
+import { songSearchSchema } from '@renderer/utils/zod/songSchema';
 import calculateTimeFromSeconds from '@renderer/utils/calculateTimeFromSeconds';
 import { useSuspenseQuery, useMutation, useQuery } from '@tanstack/react-query';
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useStore } from '@tanstack/react-store';
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import storage from '@renderer/utils/localStorage';
 import { useTranslation } from 'react-i18next';
 
 export const Route = createFileRoute('/main-player/artists/$artistId')({
+  validateSearch: songSearchSchema,
   component: ArtistInfoPage,
   loader: async (route) => {
     const artistId = Number(route.params.artistId);
@@ -61,7 +63,8 @@ function ArtistInfoPage() {
     store,
     (state) => state.localStorage.sortingStates?.artistDetailPage || 'aToZ'
   );
-  const [sortingOrder, setSortingOrder] = useState<SongSortTypes>(artistDetailSortingState);
+  const { sortingOrder = artistDetailSortingState } = Route.useSearch();
+  const navigate = useNavigate({ from: Route.fullPath });
 
   useEffect(() => {
     storage.sortingStates.setSortingStates('artistDetailPage', sortingOrder);
@@ -538,7 +541,10 @@ function ArtistInfoPage() {
                   name: 'ArtistInfoPageSongsSortDropdown',
                   value: sortingOrder,
                   options: songSortOptions,
-                  onChange: (e) => setSortingOrder(e.currentTarget.value as SongSortTypes)
+                  onChange: (e) => {
+                    const order = e.currentTarget.value as SongSortTypes;
+                    navigate({ search: (prev) => ({ ...prev, sortingOrder: order }) });
+                  }
                 }
               ]}
             />
