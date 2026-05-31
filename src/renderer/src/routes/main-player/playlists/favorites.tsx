@@ -13,7 +13,8 @@ import { songSearchSchema } from '@renderer/utils/zod/songSchema';
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useStore } from '@tanstack/react-store';
-import { useCallback, useContext } from 'react';
+import storage from '@renderer/utils/localStorage';
+import { useCallback, useContext, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { SpecialPlaylists } from '../../../../../common/playlists.enum';
@@ -43,7 +44,7 @@ function FavoritesPlaylistInfoPage() {
   const queue = useStore(store, (state) => state.localStorage.queue);
   const playlistSortingState = useStore(
     store,
-    (state) => state.localStorage.sortingStates?.songsPage || 'addedOrder'
+    (state) => state.localStorage.sortingStates?.playlistDetailPage || 'addedOrder'
   );
   const preferences = useStore(store, (state) => state.localStorage.preferences);
   const { updateQueueData, addNewNotifications, createQueue, playSong } =
@@ -51,6 +52,10 @@ function FavoritesPlaylistInfoPage() {
   const { t } = useTranslation();
   const { sortingOrder = playlistSortingState } = Route.useSearch();
   const navigate = useNavigate({ from: '/main-player/playlists/favorites' });
+
+  useEffect(() => {
+    storage.sortingStates.setSortingStates('playlistDetailPage', sortingOrder);
+  }, [sortingOrder]);
 
   const { data: favoriteSongs = [] } = useSuspenseQuery({
     ...songQuery.favorites({ sortType: sortingOrder }),

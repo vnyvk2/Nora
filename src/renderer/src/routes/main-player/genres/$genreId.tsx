@@ -14,7 +14,8 @@ import { songSearchSchema } from '@renderer/utils/zod/songSchema';
 import { useQuery, useSuspenseQuery } from '@tanstack/react-query';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useStore } from '@tanstack/react-store';
-import { useCallback, useContext } from 'react';
+import storage from '@renderer/utils/localStorage';
+import { useCallback, useContext, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
 export const Route = createFileRoute('/main-player/genres/$genreId')({
@@ -28,6 +29,10 @@ export const Route = createFileRoute('/main-player/genres/$genreId')({
 function GenreInfoPage() {
   const queue = useStore(store, (state) => state.localStorage.queue);
   const preferences = useStore(store, (state) => state.localStorage.preferences);
+  const genreDetailSortingState = useStore(
+    store,
+    (state) => state.localStorage.sortingStates?.genreDetailPage || 'aToZ'
+  );
 
   const { createQueue, updateQueueData, addNewNotifications, playSong } =
     useContext(AppUpdateContext);
@@ -39,9 +44,13 @@ function GenreInfoPage() {
   });
   const {
     scrollTopOffset,
-    sortingOrder = 'aToZ',
+    sortingOrder = genreDetailSortingState,
     filteringOrder = 'notSelected'
   } = Route.useSearch();
+
+  useEffect(() => {
+    storage.sortingStates.setSortingStates('genreDetailPage', sortingOrder);
+  }, [sortingOrder]);
 
   const { data: genreData } = useSuspenseQuery({
     ...genreQuery.single({ genreId }),

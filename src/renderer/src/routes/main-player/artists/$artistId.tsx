@@ -21,7 +21,8 @@ import calculateTimeFromSeconds from '@renderer/utils/calculateTimeFromSeconds';
 import { useSuspenseQuery, useMutation, useQuery } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
 import { useStore } from '@tanstack/react-store';
-import { useCallback, useContext, useMemo, useRef, useState } from 'react';
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import storage from '@renderer/utils/localStorage';
 import { useTranslation } from 'react-i18next';
 
 export const Route = createFileRoute('/main-player/artists/$artistId')({
@@ -56,7 +57,15 @@ function ArtistInfoPage() {
   });
   const [isAllAlbumsVisible, setIsAllAlbumsVisible] = useState(false);
   const [isAllSongsVisible, setIsAllSongsVisible] = useState(false);
-  const [sortingOrder, setSortingOrder] = useState<SongSortTypes>('aToZ');
+  const artistDetailSortingState = useStore(
+    store,
+    (state) => state.localStorage.sortingStates?.artistDetailPage || 'aToZ'
+  );
+  const [sortingOrder, setSortingOrder] = useState<SongSortTypes>(artistDetailSortingState);
+
+  useEffect(() => {
+    storage.sortingStates.setSortingStates('artistDetailPage', sortingOrder);
+  }, [sortingOrder]);
 
   const songsContainerRef = useRef(null);
   const { width } = useResizeObserver(songsContainerRef);
