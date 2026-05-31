@@ -2,9 +2,9 @@ import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 
 import en from './assets/locales/en/en.json';
+import ptBR from './assets/locales/pt-br/pt-br.json';
 import tr from './assets/locales/tr/tr.json';
 import vi from './assets/locales/vi/vi.json';
-import ptBR from './assets/locales/pt-br/pt-br.json';
 import type { DropdownOption } from './components/Dropdown';
 
 export const resources = {
