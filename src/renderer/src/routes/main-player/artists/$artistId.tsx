@@ -274,7 +274,7 @@ function ArtistInfoPage() {
 
   return (
     <MainContainer
-      className="artist-info-page-container appear-from-bottom relative overflow-y-auto rounded-tl-lg pt-8 pr-2 pb-2 pl-2 [scrollbar-gutter:stable]"
+      className="artist-info-page-container appear-from-bottom relative [scrollbar-gutter:stable] overflow-y-auto rounded-tl-lg pt-8 pr-2 pb-2 pl-2"
       ref={songsContainerRef}
     >
       <div className="artist-img-and-info-container relative mb-12 flex flex-row items-center pl-8 *:z-10">
