@@ -17,13 +17,13 @@ import { albumQuery } from '@renderer/queries/albums';
 import { artistQuery } from '@renderer/queries/aritsts';
 import { songQuery } from '@renderer/queries/songs';
 import { store } from '@renderer/store/store';
-import { songSearchSchema } from '@renderer/utils/zod/songSchema';
 import calculateTimeFromSeconds from '@renderer/utils/calculateTimeFromSeconds';
+import storage from '@renderer/utils/localStorage';
+import { songSearchSchema } from '@renderer/utils/zod/songSchema';
 import { useSuspenseQuery, useMutation, useQuery } from '@tanstack/react-query';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useStore } from '@tanstack/react-store';
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import storage from '@renderer/utils/localStorage';
 import { useTranslation } from 'react-i18next';
 
 export const Route = createFileRoute('/main-player/artists/$artistId')({
