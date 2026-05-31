@@ -343,7 +343,6 @@ class PlayerQueue {
    * @returns True if removed successfully, false if not found
    */
   removeSongId(songId: number): boolean {
-    this.queueBeforeShuffle = undefined;
     const index = this.songIds.indexOf(songId);
     console.log('[PlayerQueue.removeSongId]', {
       songId,
@@ -352,6 +351,7 @@ class PlayerQueue {
       queueLengthBefore: this.songIds.length
     });
     if (index !== -1) {
+      this.queueBeforeShuffle = undefined;
       this.songIds.splice(index, 1);
       this.emit('songRemoved', { songId, position: index });
       console.log('[PlayerQueue.removeSongId.removed]', {
@@ -390,8 +390,8 @@ class PlayerQueue {
    * @returns The removed song ID, or null if position is invalid
    */
   removeSongAtPosition(position: number): number | null {
-    this.queueBeforeShuffle = undefined;
     if (position >= 0 && position < this.songIds.length) {
+      this.queueBeforeShuffle = undefined;
       const [removed] = this.songIds.splice(position, 1);
       this.emit('songRemoved', { songId: removed, position });
       // Adjust current position if necessary
