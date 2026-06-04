@@ -115,8 +115,8 @@
     "version": "npm install && npm run build"
   },
   "dependencies": {
-    "@electric-sql/pglite": "^0.4.4",
-    "@electric-sql/pglite-tools": "^0.3.4",
+    "@electric-sql/pglite": "^0.5.1",
+    "@electric-sql/pglite-tools": "^0.4.1",
     "@electron-toolkit/preload": "^3.0.2",
     "@headlessui/react": "^2.2.9",
     "@hello-pangea/dnd": "^18.0.1",
@@ -178,7 +178,7 @@
     "globals": "^17.4.0",
     "husky": "^9.1.7",
     "material-symbols": "^0.44.0",
-    "oxfmt": "^0.52.0",
+    "oxfmt": "^0.53.0",
     "oxlint": "^1.65.0",
     "oxlint-tsgolint": "^0.23.0",
     "react": "^19.2.4",
