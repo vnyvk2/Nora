@@ -93,6 +93,7 @@
     "somethingWentWrong": "Bir hata oluştu.",
     "details": "Detaylar",
     "restartApp": "Uygulamayı Yeniden Başlat",
+    "skipSong": "Sonraki Şarkıya Geç",
     "ok": "Tamam",
     "loading": "Yükleniyor"
   },
@@ -853,12 +854,7 @@
   },
   "songUnplayableErrorPrompt": {
     "title": "Şarkı Çalınamadı",
-    "description": "O şarkıyı çalamayacağız gibi görünüyor. Lütfen seçilen şarkının sisteminizde mevcut olup olmadığını ve uygulama tarafından erişilebilir olup olmadığını kontrol edin.",
-    "formatNotSupportedTitle": "Bu şarkı Nora'da destekleniyor mu?",
-    "formatNotSupportedDescription": "Bu ses dosyası formatı, mevcut sistem veya tarayıcı yapılandırmanız tarafından desteklenmiyor olabilir. Lütfen desteklenen formatların listesini aşağıda kontrol edin.",
-    "flacNotSupportedDescription": "FLAC dosyaları, tarayıcı motorundaki kodek sınırlamaları nedeniyle Nora'da desteklenmemektedir. Ancak FLAC dosyalarınızı MP3, OGG veya WAV formatına dönüştürebilir ve Nora'da mükemmel şekilde çalabilirsiniz.",
-    "supportedFormatsLabel": "Desteklenen Ses Formatları:",
-    "flacConversionHint": "💡 FLAC dosyalarınızı FFmpeg veya Audacity gibi ücretsiz araçlar kullanarak MP3'e (önerilir), OGG veya WAV'ye dönüştürmeyi deneyin."
+    "description": "O şarkıyı çalamayacağız gibi görünüyor. Lütfen seçilen şarkının sisteminizde mevcut olup olmadığını ve uygulama tarafından erişilebilir olup olmadığını kontrol edin."
   },
   "unsupportedFileMessagePrompt": {
     "title": "Desteklenmeyen Ses Dosyası",
