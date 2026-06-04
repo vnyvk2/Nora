@@ -614,6 +614,10 @@ declare global {
     albumsPage?: AlbumSortTypes;
     genresPage?: GenreSortTypes;
     musicFoldersPage?: FolderSortTypes;
+    playlistDetailPage?: SongSortTypes;
+    albumDetailPage?: SongSortTypes;
+    genreDetailPage?: SongSortTypes;
+    artistDetailPage?: SongSortTypes;
   }
 
   interface LyricsEditorSettings {
@@ -1044,7 +1048,11 @@ declare global {
     | 'sortingStates.playlistsPage'
     | 'sortingStates.albumsPage'
     | 'sortingStates.artistsPage'
-    | 'sortingStates.genresPage';
+    | 'sortingStates.genresPage'
+    | 'sortingStates.playlistDetailPage'
+    | 'sortingStates.albumDetailPage'
+    | 'sortingStates.genreDetailPage'
+    | 'sortingStates.artistDetailPage';
 
   type SongFilterTypes =
     | 'notSelected'
