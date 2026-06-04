@@ -31,6 +31,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { type VirtuosoHandle } from 'react-virtuoso';
 
+// eslint-disable-next-line react/only-export-components
 export const Route = createFileRoute('/main-player/queue/')({
   component: RouteComponent,
   validateSearch: baseInfoPageSearchParamsSchema
