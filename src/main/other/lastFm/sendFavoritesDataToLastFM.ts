@@ -13,6 +13,19 @@ import getLastFmAuthData from './getLastFMAuthData';
 
 type Method = 'track.love' | 'track.unlove';
 
+const LASTFM_REQUEST_TIMEOUT_MS = 10_000;
+const LASTFM_BASE_URL = 'https://ws.audioscrobbler.com/2.0/';
+
+const fetchWithTimeout = async (url: URL, init: RequestInit, timeoutMs: number) => {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+};
+
 const generateApiSignature = (method: Method, authData: AuthData, params: LoveParams) => {
   const { LAST_FM_API_KEY, LAST_FM_SHARED_SECRET, SESSION_KEY } = authData;
 
@@ -55,7 +68,7 @@ const sendFavoritesDataToLastFM = async (method: Method, title: string, artists:
 
     const authData = await getLastFmAuthData();
 
-    const url = new URL('http://ws.audioscrobbler.com/2.0/');
+    const url = new URL(LASTFM_BASE_URL);
     url.searchParams.set('format', 'json');
 
     const params: LoveParams = {
@@ -65,13 +78,17 @@ const sendFavoritesDataToLastFM = async (method: Method, title: string, artists:
 
     const body = generateApiResponseBody(method, authData, params);
 
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded'
+    const res = await fetchWithTimeout(
+      url,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body
       },
-      body
-    });
+      LASTFM_REQUEST_TIMEOUT_MS
+    );
 
     if (res.status === 200)
       return logger.debug('Love/Unlove song request accepted.', { method, title, artists });

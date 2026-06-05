@@ -9,10 +9,12 @@ const MAX_RETRY_COUNT = 3;
 const TTL_DAYS = 30;
 
 export async function getPendingCount(trx: DB | DBTransaction = db): Promise<number> {
+  // Count both pending and in-flight (sending) rows so the capacity check
+  // reflects the real effective queue size.
   const result = await trx
     .select({ count: sql<number>`count(*)` })
     .from(scrobbleQueue)
-    .where(eq(scrobbleQueue.status, 'pending'));
+    .where(inArray(scrobbleQueue.status, ['pending', 'sending']));
   return Number(result[0].count);
 }
 
@@ -96,12 +98,12 @@ export async function markFailed(
 export async function resetStuckSending(trx: DB | DBTransaction = db): Promise<void> {
   await trx
     .update(scrobbleQueue)
-    .set({ status: 'pending' })
+    .set({ status: 'pending', updatedAt: sql`NOW()` })
     .where(eq(scrobbleQueue.status, 'sending'));
 }
 
 export async function deleteOldPending(trx: DB | DBTransaction = db): Promise<void> {
-  const cutoff = sql`NOW() - INTERVAL '${sql.raw(String(TTL_DAYS))} days'`;
+  const cutoff = sql`NOW() - (${TTL_DAYS} * INTERVAL '1 day')`;
   await trx
     .delete(scrobbleQueue)
     .where(

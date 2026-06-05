@@ -35,7 +35,7 @@ export async function flushScrobbleQueue(): Promise<void> {
 
     await resetStuckSending();
 
-    const url = new URL('http://ws.audioscrobbler.com/2.0/');
+    const url = new URL('https://ws.audioscrobbler.com/2.0/');
     url.searchParams.set('format', 'json');
 
     await deleteOldPending();
@@ -43,6 +43,10 @@ export async function flushScrobbleQueue(): Promise<void> {
     let items = await claimPendingBatch(FLUSH_BATCH_SIZE);
 
     while (items.length > 0) {
+      if (!checkIfConnectedToInternet()) {
+        logger.debug('Flush loop exiting - internet dropped during batch delay');
+        return;
+      }
       for (const item of items) {
         try {
           await processItem(item, authData, url);
@@ -71,7 +75,8 @@ async function processItem(
 ): Promise<void> {
   switch (item.operationType) {
     case 'scrobble': {
-      if (!item.songId || !item.startTimeSecs) throw new Error('Missing scrobble params');
+      if (item.songId == null || item.startTimeSecs == null)
+        throw new Error('Missing scrobble params');
       const songData = await getSongById(item.songId);
       if (!songData) throw new Error('Song not found');
       const song = convertToSongData(songData);
@@ -89,6 +94,9 @@ async function processItem(
     }
 
     case 'now_playing': {
+      // NOTE: now_playing items are intentionally never queued
+      // (sendNowPlayingSongDataToLastFM.ts posts updates directly).
+      // This branch is kept only for forward-compatibility.
       if (!item.songId) throw new Error('Missing now_playing params');
       const songData = await getSongById(item.songId);
       if (!songData) throw new Error('Song not found');

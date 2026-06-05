@@ -28,7 +28,20 @@ const scrobbleSong = async (songId: number, startTimeSecs: number) => {
 
     const songData = await getSongById(songId);
 
-    if (songData) {
+    if (!songData) {
+      // Song row was deleted before the online scrobble fired — queue with
+      // fallback metadata so the flush loop can still post the track
+      await insertScrobble({
+        songId,
+        startTimeSecs,
+        operationType: 'scrobble',
+        trackTitle: '',
+        artistNames: ''
+      });
+      return logger.warn('Scrobble queued - song not found while online', { songId });
+    }
+
+    {
       const song = convertToSongData(songData);
       const authData = await getLastFmAuthData();
 
