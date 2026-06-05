@@ -70,6 +70,10 @@ export const deleteSongSeekEvents = (songId: number, trx: DB | DBTransaction = d
   return trx.delete(seekEvents).where(eq(seekEvents.songId, songId));
 };
 
+export const incrementSongSkipCount = (songId: number, trx: DB | DBTransaction = db) => {
+  return trx.update(songs).set({ skipCount: sql`${songs.skipCount} + 1` }).where(eq(songs.id, songId));
+};
+
 export const deleteSongSkipEvents = (songId: number, trx: DB | DBTransaction = db) => {
   return trx.transaction(async (tx) => {
     await tx.delete(skipEvents).where(eq(skipEvents.songId, songId));
