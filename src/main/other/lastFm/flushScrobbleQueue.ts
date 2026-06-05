@@ -18,7 +18,22 @@ import getLastFmAuthData from './getLastFMAuthData';
 
 const FLUSH_BATCH_SIZE = 5;
 const BATCH_DELAY_MS = 1500;
+const LASTFM_REQUEST_TIMEOUT_MS = 10_000;
 let isFlushing = false;
+
+const fetchWithTimeout = async (
+  url: URL,
+  init: RequestInit,
+  timeoutMs: number
+): Promise<Response> => {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+};
 
 export async function flushScrobbleQueue(): Promise<void> {
   if (isFlushing) return;
@@ -78,7 +93,20 @@ async function processItem(
       if (item.songId == null || item.startTimeSecs == null)
         throw new Error('Missing scrobble params');
       const songData = await getSongById(item.songId);
-      if (!songData) throw new Error('Song not found');
+      // If the song was deleted between queue and flush, fall back to the
+      // title/artist captured at queue time so the scrobble can still post.
+      if (!songData) {
+        if (!item.trackTitle || !item.artistNames) {
+          throw new Error('Song not found and no fallback metadata available');
+        }
+        const params: ScrobbleParams = {
+          track: item.trackTitle,
+          artist: item.artistNames,
+          timestamp: item.startTimeSecs
+        };
+        await postToLastFm(url, authData, 'track.scrobble', params);
+        return;
+      }
       const song = convertToSongData(songData);
       const params: ScrobbleParams = {
         track: song.title,
@@ -135,10 +163,14 @@ async function postToLastFm<T extends LastFMApi['method']>(
   params: Extract<LastFMApi, { method: T }>['params']
 ): Promise<void> {
   const body = generateApiRequestBodyForLastFMPostRequests({ method, authData, params } as LastFMApi);
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body
-  });
+  const res = await fetchWithTimeout(
+    url,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body
+    },
+    LASTFM_REQUEST_TIMEOUT_MS
+  );
   if (res.status !== 200) throw new Error(`API returned ${res.status}`);
 }

@@ -9,6 +9,38 @@ import { checkIfConnectedToInternet } from '../../main';
 import generateApiRequestBodyForLastFMPostRequests from './generateApiRequestBodyForLastFMPostRequests';
 import getLastFmAuthData from './getLastFMAuthData';
 
+const LASTFM_BASE_URL = 'https://ws.audioscrobbler.com/2.0/';
+const LASTFM_REQUEST_TIMEOUT_MS = 10_000;
+
+const fetchWithTimeout = async (
+  url: URL,
+  init: RequestInit,
+  timeoutMs: number
+): Promise<Response> => {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+};
+
+const queueScrobbleForRetry = async (
+  songId: number,
+  startTimeSecs: number,
+  trackTitle: string,
+  artistNames: string
+): Promise<void> => {
+  await insertScrobble({
+    songId,
+    startTimeSecs,
+    operationType: 'scrobble',
+    trackTitle,
+    artistNames
+  });
+};
+
 const scrobbleSong = async (songId: number, startTimeSecs: number) => {
   try {
     const { sendSongScrobblingDataToLastFM: isScrobblingEnabled } = await getUserSettings();
@@ -21,31 +53,29 @@ const scrobbleSong = async (songId: number, startTimeSecs: number) => {
 
     const isConnectedToInternet = checkIfConnectedToInternet();
 
+    // Look up the song row once so we can capture title/artist for the queue
+    // fallback regardless of which path we end up on.
+    const songData = await getSongById(songId).catch(() => null);
+    const song = songData ? convertToSongData(songData) : null;
+    const fallbackTrack = song?.title ?? '';
+    const fallbackArtist = song?.artists?.map((a) => a.name).join(', ') ?? '';
+
     if (!isConnectedToInternet) {
-      await insertScrobble({ songId, startTimeSecs, operationType: 'scrobble' });
+      await queueScrobbleForRetry(songId, startTimeSecs, fallbackTrack, fallbackArtist);
       return logger.debug('Scrobble queued for later - offline', { songId });
     }
 
-    const songData = await getSongById(songId);
-
-    if (!songData) {
+    if (!song) {
       // Song row was deleted before the online scrobble fired — queue with
-      // fallback metadata so the flush loop can still post the track
-      await insertScrobble({
-        songId,
-        startTimeSecs,
-        operationType: 'scrobble',
-        trackTitle: '',
-        artistNames: ''
-      });
+      // fallback metadata so the flush loop can still post the track.
+      await queueScrobbleForRetry(songId, startTimeSecs, '', '');
       return logger.warn('Scrobble queued - song not found while online', { songId });
     }
 
     {
-      const song = convertToSongData(songData);
       const authData = await getLastFmAuthData();
 
-      const url = new URL('http://ws.audioscrobbler.com/2.0/');
+      const url = new URL(LASTFM_BASE_URL);
       url.searchParams.set('format', 'json');
 
       const params: ScrobbleParams = {
@@ -64,23 +94,27 @@ const scrobbleSong = async (songId: number, startTimeSecs: number) => {
         params
       });
 
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded'
+      const res = await fetchWithTimeout(
+        url,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+          },
+          body
         },
-        body
-      });
+        LASTFM_REQUEST_TIMEOUT_MS
+      );
 
       if (res.status === 200)
         return logger.debug(`Scrobbled song accepted.`, { songId: song.songId });
 
       const json: LastFMScrobblePostResponse = await res.json();
-      await insertScrobble({ songId, startTimeSecs, operationType: 'scrobble' });
+      await queueScrobbleForRetry(songId, startTimeSecs, fallbackTrack, fallbackArtist);
       return logger.warn('Failed to scrobble song to LastFM, queued for retry', { json });
     }
   } catch (error) {
-    await insertScrobble({ songId, startTimeSecs, operationType: 'scrobble' }).catch(() => {});
+    await queueScrobbleForRetry(songId, startTimeSecs, '', '').catch(() => {});
     return logger.error('Failed to scrobble song data to LastFM, queued for retry.', {
       error
     });
