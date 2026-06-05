@@ -156,6 +156,8 @@
     "trackNoAscending": "Parça Numarası (Artan)",
     "trackNoDescending": "Parça Numarası (Azalan)",
     "addedOrder": "Sipariş Eklendi"
+    "mostSkipped": "Most skipped (All time)",
+    "leastSkipped": "Least skipped (All time)"
   },
   "equalizerPresets": {
     "custom": "Özel",

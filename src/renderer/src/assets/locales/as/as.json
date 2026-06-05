@@ -169,6 +169,8 @@
     "trackNoAscending": "ট্ৰেক নম্বৰ (ঊৰ্ধ্বক্ৰম)",
     "trackNoDescending": "ট্ৰেক নম্বৰ (অধঃক্ৰম)",
     "addedOrder": "যোগ কৰা ক্ৰম"
+    "mostSkipped": "Most skipped (All time)",
+    "leastSkipped": "Least skipped (All time)"
   },
 
   "filterTypes": {

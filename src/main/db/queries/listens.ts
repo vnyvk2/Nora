@@ -74,8 +74,8 @@ export const incrementSongSkipCount = (songId: number, trx: DB | DBTransaction =
   return trx.update(songs).set({ skipCount: sql`${songs.skipCount} + 1` }).where(eq(songs.id, songId));
 };
 
-export const deleteSongSkipEvents = (songId: number, trx: DB | DBTransaction = db) => {
-  return trx.transaction(async (tx) => {
+export const deleteSongSkipEvents = (songId: number) => {
+  return db.transaction(async (tx) => {
     await tx.delete(skipEvents).where(eq(skipEvents.songId, songId));
     await tx.update(songs).set({ skipCount: 0 }).where(eq(songs.id, songId));
   });
