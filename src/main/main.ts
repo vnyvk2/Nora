@@ -877,13 +877,15 @@ export async function changePlayerType(type: PlayerTypes) {
 function manageWindowOnDisplayMetricsChange() {
   const bounds = mainWindow.getBounds();
   const displays = screen.getAllDisplays();
+  // Use rectangle overlap so a partially visible window counts as on-screen
+  // (otherwise a window straddling a display edge gets teleported to the primary).
   const isOnAnyDisplay = displays.some((display) => {
     const { x, y, width, height } = display.workArea;
     return (
-      bounds.x >= x &&
-      bounds.y >= y &&
       bounds.x < x + width &&
-      bounds.y < y + height
+      bounds.x + bounds.width > x &&
+      bounds.y < y + height &&
+      bounds.y + bounds.height > y
     );
   });
 
@@ -902,6 +904,9 @@ function manageWindowPositionInMonitor() {
   manageWindowOnDisplayMetricsChange();
 
   screen.on('display-metrics-changed', () => manageWindowOnDisplayMetricsChange());
+  // `display-metrics-changed` is only fired for resolution / scale changes on
+  // existing displays; a hot-unplugged monitor fires `display-removed` instead.
+  screen.on('display-removed', () => manageWindowOnDisplayMetricsChange());
 }
 
 export async function toggleAutoLaunch(autoLaunchState: boolean) {
