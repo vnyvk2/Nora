@@ -142,8 +142,8 @@ export function initializeIPC(mainWindow: BrowserWindow, abortSignal: AbortSigna
       toggleAudioPlayingState(isPlaying)
     );
 
-    ipcMain.on('app/setDiscordRpcActivity', (_: unknown, options: unknown) =>
-      setDiscordRpcActivity(options as Record<string, unknown>)
+    ipcMain.on('app/setDiscordRpcActivity', (_: unknown, activity: DiscordActivity) =>
+      setDiscordRpcActivity(activity)
     );
 
     ipcMain.on('app/stopScreenSleeping', stopScreenSleeping);
