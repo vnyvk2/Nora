@@ -891,12 +891,35 @@ function manageWindowOnDisplayMetricsChange() {
 
   if (!isOnAnyDisplay) {
     const primaryDisplay = screen.getPrimaryDisplay();
-    if (mainWindow.fullScreen) mainWindow.setFullScreen(false);
-    mainWindow.setPosition(primaryDisplay.workArea.x, primaryDisplay.workArea.y);
-    logger.debug('Window was off-screen; moved to primary display', {
-      previousPosition: { x: bounds.x, y: bounds.y },
-      newPosition: { x: primaryDisplay.workArea.x, y: primaryDisplay.workArea.y }
-    });
+    const newX = primaryDisplay.workArea.x;
+    const newY = primaryDisplay.workArea.y;
+
+    const reposition = () => {
+      mainWindow.setPosition(newX, newY);
+
+      // Persist the corrected coordinates so stale values don't cause a
+      // repeat correction on the next launch (CodeRabbit minor finding).
+      if (playerType === 'mini') {
+        saveUserSettings({ miniPlayerX: newX, miniPlayerY: newY });
+      } else {
+        saveUserSettings({ mainWindowX: newX, mainWindowY: newY });
+      }
+
+      logger.debug('Window was off-screen; moved to primary display', {
+        previousPosition: { x: bounds.x, y: bounds.y },
+        newPosition: { x: newX, y: newY }
+      });
+    };
+
+    if (mainWindow.fullScreen) {
+      // On macOS the fullscreen-exit animation takes ~500 ms; calling
+      // setPosition during the animation is a no-op.  Defer repositioning
+      // until the animation completes (CodeRabbit major finding).
+      mainWindow.setFullScreen(false);
+      mainWindow.once('leave-full-screen', reposition);
+    } else {
+      reposition();
+    }
   }
 }
 
