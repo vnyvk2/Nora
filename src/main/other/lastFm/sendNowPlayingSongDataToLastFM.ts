@@ -12,6 +12,19 @@ import { checkIfConnectedToInternet } from '../../main';
 import generateApiRequestBodyForLastFMPostRequests from './generateApiRequestBodyForLastFMPostRequests';
 import getLastFmAuthData from './getLastFMAuthData';
 
+const LASTFM_REQUEST_TIMEOUT_MS = 10_000;
+const LASTFM_BASE_URL = 'https://ws.audioscrobbler.com/2.0/';
+
+const fetchWithTimeout = async (url: URL, init: RequestInit, timeoutMs: number) => {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+};
+
 const sendNowPlayingSongDataToLastFM = async (songId: number) => {
   try {
     const { sendNowPlayingSongDataToLastFM: isScrobblingEnabled } = await getUserSettings();
@@ -33,7 +46,7 @@ const sendNowPlayingSongDataToLastFM = async (songId: number) => {
       const song = convertToSongData(songData);
       const authData = await getLastFmAuthData();
 
-      const url = new URL('http://ws.audioscrobbler.com/2.0/');
+      const url = new URL(LASTFM_BASE_URL);
       url.searchParams.set('format', 'json');
 
       const params: updateNowPlayingParams = {
@@ -51,13 +64,17 @@ const sendNowPlayingSongDataToLastFM = async (songId: number) => {
         params
       });
 
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded'
+      const res = await fetchWithTimeout(
+        url,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+          },
+          body
         },
-        body
-      });
+        LASTFM_REQUEST_TIMEOUT_MS
+      );
 
       if (res.status === 200)
         return logger.debug(`Now playing song data accepted in LastFM.`, { songId });
