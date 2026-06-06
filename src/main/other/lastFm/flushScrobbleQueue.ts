@@ -9,7 +9,7 @@ import {
 } from '@main/db/queries/scrobble_queue';
 import { convertToSongData } from '@main/utils/convert';
 
-import type { AuthData, LoveParams, ScrobbleParams, updateNowPlayingParams } from '../../../types/last_fm_api';
+import type { AuthData, LoveParams, ScrobbleParams } from '../../../types/last_fm_api';
 import type { LastFMApi } from './generateApiRequestBodyForLastFMPostRequests';
 import logger from '../../logger';
 import { checkIfConnectedToInternet } from '../../main';
@@ -118,26 +118,6 @@ async function processItem(
         duration: Math.ceil(song.duration)
       };
       await postToLastFm(url, authData, 'track.scrobble', params);
-      return;
-    }
-
-    case 'now_playing': {
-      // NOTE: now_playing items are intentionally never queued
-      // (sendNowPlayingSongDataToLastFM.ts posts updates directly).
-      // This branch is kept only for forward-compatibility.
-      if (!item.songId) throw new Error('Missing now_playing params');
-      const songData = await getSongById(item.songId);
-      if (!songData) throw new Error('Song not found');
-      const song = convertToSongData(songData);
-      const params: updateNowPlayingParams = {
-        track: song.title,
-        artist: song.artists?.map((a) => a.name).join(', ') || '',
-        album: song.album?.name,
-        albumArtist: song?.albumArtists?.map((a) => a.name).join(', '),
-        trackNumber: song.trackNo,
-        duration: Math.ceil(song.duration)
-      };
-      await postToLastFm(url, authData, 'track.updateNowPlaying', params);
       return;
     }
 

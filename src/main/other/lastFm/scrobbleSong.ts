@@ -56,20 +56,17 @@ const scrobbleSong = async (songId: number, startTimeSecs: number) => {
     // Look up the song row once so we can capture title/artist for the queue
     // fallback regardless of which path we end up on.
     const songData = await getSongById(songId).catch(() => null);
-    const song = songData ? convertToSongData(songData) : null;
-    const fallbackTrack = song?.title ?? '';
-    const fallbackArtist = song?.artists?.map((a) => a.name).join(', ') ?? '';
+    if (!songData) {
+      logger.warn('Scrobble skipped - missing song metadata', { songId });
+      return;
+    }
+    const song = convertToSongData(songData);
+    const fallbackTrack = song.title ?? '';
+    const fallbackArtist = song.artists?.map((a) => a.name).join(', ') ?? '';
 
     if (!isConnectedToInternet) {
       await queueScrobbleForRetry(songId, startTimeSecs, fallbackTrack, fallbackArtist);
       return logger.debug('Scrobble queued for later - offline', { songId });
-    }
-
-    if (!song) {
-      // Song row was deleted before the online scrobble fired — queue with
-      // fallback metadata so the flush loop can still post the track.
-      await queueScrobbleForRetry(songId, startTimeSecs, '', '');
-      return logger.warn('Scrobble queued - song not found while online', { songId });
     }
 
     {

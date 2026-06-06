@@ -1,6 +1,5 @@
 import { getUserSettings } from '@main/db/queries/settings';
 import { getSongById } from '@main/db/queries/songs';
-import { insertScrobble } from '@main/db/queries/scrobble_queue';
 import { convertToSongData } from '@main/utils/convert';
 
 import type {
@@ -36,8 +35,7 @@ const sendNowPlayingSongDataToLastFM = async (songId: number) => {
     const isConnectedToInternet = checkIfConnectedToInternet();
 
     if (!isConnectedToInternet) {
-      await insertScrobble({ songId, operationType: 'now_playing' });
-      return logger.debug('Now playing queued for retry - offline', { songId });
+      return logger.debug('Now playing skipped - offline', { songId });
     }
 
     const songData = await getSongById(songId);
@@ -80,12 +78,10 @@ const sendNowPlayingSongDataToLastFM = async (songId: number) => {
         return logger.debug(`Now playing song data accepted in LastFM.`, { songId });
 
       const json: LastFMScrobblePostResponse = await res.json();
-      await insertScrobble({ songId, operationType: 'now_playing' });
-      return logger.warn('Now playing queued for retry - API error', { json, songId });
+      return logger.warn('Now playing API error', { json, songId });
     }
   } catch (error) {
-    await insertScrobble({ songId, operationType: 'now_playing' }).catch(() => {});
-    return logger.error('Now playing queued for retry - exception', { error, songId });
+    return logger.error('Now playing exception', { error, songId });
   }
 };
 
