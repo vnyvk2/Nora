@@ -193,6 +193,7 @@
     "electron": true,
     "electron-winstaller": true,
     "esbuild": true,
-    "sharp": true
+    "sharp": true,
+    "github:devsnek/node-register-scheme#e7cc9a63a1f512565da44cb57316d9fb10750e17": true
   }
 }

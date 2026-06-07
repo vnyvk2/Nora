@@ -657,7 +657,6 @@ export const getAllSongsInFavorite = async (
       if (sortType === 'addedOrder') return orders;
       if (sortType === 'mostSkipped') return [desc(songs.skipCount), asc(songs.title), ...orders];
       if (sortType === 'leastSkipped') return [asc(songs.skipCount), asc(songs.title), ...orders];
-      // Add other sort types as needed
       return orders; // Default sorting
     },
     limit: limit,
