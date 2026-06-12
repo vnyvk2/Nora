@@ -8,23 +8,9 @@ import logger from '../../logger';
 import { checkIfConnectedToInternet } from '../../main';
 import generateApiRequestBodyForLastFMPostRequests from './generateApiRequestBodyForLastFMPostRequests';
 import getLastFmAuthData from './getLastFMAuthData';
+import { LASTFM_REQUEST_TIMEOUT_MS, fetchWithTimeout } from './lastFmUtils';
 
 const LASTFM_BASE_URL = 'https://ws.audioscrobbler.com/2.0/';
-const LASTFM_REQUEST_TIMEOUT_MS = 10_000;
-
-const fetchWithTimeout = async (
-  url: URL,
-  init: RequestInit,
-  timeoutMs: number
-): Promise<Response> => {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    return await fetch(url, { ...init, signal: controller.signal });
-  } finally {
-    clearTimeout(timer);
-  }
-};
 
 const queueScrobbleForRetry = async (
   songId: number,
@@ -42,6 +28,9 @@ const queueScrobbleForRetry = async (
 };
 
 const scrobbleSong = async (songId: number, startTimeSecs: number) => {
+  let fallbackTrack = '';
+  let fallbackArtist = '';
+
   try {
     const { sendSongScrobblingDataToLastFM: isScrobblingEnabled } = await getUserSettings();
 
@@ -61,8 +50,8 @@ const scrobbleSong = async (songId: number, startTimeSecs: number) => {
       return;
     }
     const song = convertToSongData(songData);
-    const fallbackTrack = song.title ?? '';
-    const fallbackArtist = song.artists?.map((a) => a.name).join(', ') ?? '';
+    fallbackTrack = song.title ?? '';
+    fallbackArtist = song.artists?.map((a) => a.name).join(', ') ?? '';
 
     if (!isConnectedToInternet) {
       await queueScrobbleForRetry(songId, startTimeSecs, fallbackTrack, fallbackArtist);
@@ -111,7 +100,7 @@ const scrobbleSong = async (songId: number, startTimeSecs: number) => {
       return logger.warn('Failed to scrobble song to LastFM, queued for retry', { json });
     }
   } catch (error) {
-    await queueScrobbleForRetry(songId, startTimeSecs, '', '').catch(() => {});
+    await queueScrobbleForRetry(songId, startTimeSecs, fallbackTrack, fallbackArtist).catch(() => {});
     return logger.error('Failed to scrobble song data to LastFM, queued for retry.', {
       error
     });

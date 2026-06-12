@@ -10,19 +10,9 @@ import logger from '../../logger';
 import { checkIfConnectedToInternet } from '../../main';
 import generateApiRequestBodyForLastFMPostRequests from './generateApiRequestBodyForLastFMPostRequests';
 import getLastFmAuthData from './getLastFMAuthData';
+import { LASTFM_REQUEST_TIMEOUT_MS, fetchWithTimeout } from './lastFmUtils';
 
-const LASTFM_REQUEST_TIMEOUT_MS = 10_000;
 const LASTFM_BASE_URL = 'https://ws.audioscrobbler.com/2.0/';
-
-const fetchWithTimeout = async (url: URL, init: RequestInit, timeoutMs: number) => {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    return await fetch(url, { ...init, signal: controller.signal });
-  } finally {
-    clearTimeout(timer);
-  }
-};
 
 const sendNowPlayingSongDataToLastFM = async (songId: number) => {
   try {

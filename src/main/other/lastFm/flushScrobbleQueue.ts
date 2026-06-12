@@ -15,25 +15,11 @@ import logger from '../../logger';
 import { checkIfConnectedToInternet } from '../../main';
 import generateApiRequestBodyForLastFMPostRequests from './generateApiRequestBodyForLastFMPostRequests';
 import getLastFmAuthData from './getLastFMAuthData';
+import { LASTFM_REQUEST_TIMEOUT_MS, fetchWithTimeout } from './lastFmUtils';
 
 const FLUSH_BATCH_SIZE = 5;
 const BATCH_DELAY_MS = 1500;
-const LASTFM_REQUEST_TIMEOUT_MS = 10_000;
 let isFlushing = false;
-
-const fetchWithTimeout = async (
-  url: URL,
-  init: RequestInit,
-  timeoutMs: number
-): Promise<Response> => {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    return await fetch(url, { ...init, signal: controller.signal });
-  } finally {
-    clearTimeout(timer);
-  }
-};
 
 export async function flushScrobbleQueue(): Promise<void> {
   if (isFlushing) return;
@@ -90,9 +76,10 @@ async function processItem(
 ): Promise<void> {
   switch (item.operationType) {
     case 'scrobble': {
-      if (item.songId == null || item.startTimeSecs == null)
-        throw new Error('Missing scrobble params');
-      const songData = await getSongById(item.songId);
+      if (item.startTimeSecs == null)
+        throw new Error('Missing scrobble timestamp');
+
+      const songData = item.songId != null ? await getSongById(item.songId) : null;
       // If the song was deleted between queue and flush, fall back to the
       // title/artist captured at queue time so the scrobble can still post.
       if (!songData) {
