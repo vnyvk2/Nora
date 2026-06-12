@@ -1,10 +1,11 @@
 import { useNavigate } from '@tanstack/react-router';
 import { useStore } from '@tanstack/react-store';
 /* eslint-disable jsx-a11y/no-static-element-interactions */
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { store } from '../../store/store';
+import { AppUpdateContext } from '../../contexts/AppUpdateContext';
 import Button from '../Button';
 
 type Props = {
