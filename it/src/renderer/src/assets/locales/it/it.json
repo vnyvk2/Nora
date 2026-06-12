@@ -159,7 +159,9 @@
     "mostLovedAscending": "Least-loved",
     "trackNoAscending": "Track number (Ascending)",
     "trackNoDescending": "Track number (Descending)",
-    "addedOrder": "Added order"
+    "addedOrder": "Added order",
+    "mostSkipped": "Most skipped (All time)",
+    "leastSkipped": "Least skipped (All time)"
   },
   "filterTypes": {
     "notSelected": "Not Selected",
