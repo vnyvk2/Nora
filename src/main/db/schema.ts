@@ -121,6 +121,7 @@ export const songs = pgTable(
     // Generated column: case-insensitive text for searches (using citext type)
     titleCI: citext('title_ci').generatedAlwaysAs((): SQL => sql`${songs.title}::citext`),
     duration: decimal('duration', { precision: 10, scale: 3 }).notNull(),
+    skipCount: integer('skip_count').notNull().default(0),
     path: text('path').notNull().unique(),
     isFavorite: boolean('is_favorite').notNull().default(false),
     sampleRate: integer('sample_rate'),
@@ -166,6 +167,7 @@ export const songs = pgTable(
     index('idx_songs_is_blacklisted').on(t.isBlacklisted),
 
     // Composite indexes for common sorting patterns
+    index('idx_songs_skip_count_title').on(t.skipCount.desc(), t.title.asc()),
     index('idx_songs_year_title').on(t.year.asc(), t.title.asc()),
     index('idx_songs_track_title').on(t.trackNumber.asc(), t.title.asc()),
     index('idx_songs_created_title').on(t.createdAt.desc(), t.title.asc()),
