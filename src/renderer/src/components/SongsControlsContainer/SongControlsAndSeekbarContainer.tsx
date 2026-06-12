@@ -96,7 +96,9 @@ const SongControlsAndSeekbarContainer = () => {
           iconClassName="material-icons-round text-2xl! opacity-60 transition-opacity hover:opacity-80"
           clickHandler={() => handleSkipForwardClick('USER_SKIP')}
           onMouseEnter={() => {
-            hoverTimerRef.current = setTimeout(() => showUpNextSongPopup(), 1_000);
+            if (hoverTimerRef.current === null) {
+              hoverTimerRef.current = setTimeout(() => showUpNextSongPopup(), 1_000);
+            }
           }}
           onMouseLeave={() => {
             if (hoverTimerRef.current !== null) {
