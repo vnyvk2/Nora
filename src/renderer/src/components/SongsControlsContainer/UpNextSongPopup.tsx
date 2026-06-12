@@ -31,9 +31,16 @@ const UpNextSongPopup = (props: Props) => {
     onPopupAppears(!!upNextSongData);
   }, [onPopupAppears, upNextSongData]);
 
+  const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const showPopup = useCallback(() => {
+    if (!upNextSongDataCache.current) return;
+    if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
     setUpNextSongData(upNextSongDataCache.current);
-    setTimeout(() => setUpNextSongData(undefined), 10000);
+    hideTimerRef.current = setTimeout(() => {
+      setUpNextSongData(undefined);
+      hideTimerRef.current = null;
+    }, 10000);
   }, []);
 
   // Register showPopup so external callers (e.g. hover on Next button) can trigger it.
@@ -53,8 +60,6 @@ const UpNextSongPopup = (props: Props) => {
           const currentTime = new Date().getTime();
           if (currentTime - lastCtrlPressTime < 300 && ctrlPressed) {
             // Double Ctrl key press detected
-            console.log('Double Ctrl key press detected');
-            // Add your logic here
             showPopup();
 
             // Reset flag and time for next detection
@@ -87,9 +92,10 @@ const UpNextSongPopup = (props: Props) => {
     };
   }, [showPopup]);
 
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+
   useEffect(() => {
     let timeoutId: NodeJS.Timeout;
-    let timeIntervalId: NodeJS.Timeout;
     if (queue.songIds.length > 1 && queue.position !== null) {
       setUpNextSongData(undefined);
       const nextSongIndex = queue.songIds[queue.position + 1];
@@ -103,9 +109,8 @@ const UpNextSongPopup = (props: Props) => {
                 if (res && res[0]) {
                   const [nextSongData] = res;
                   upNextSongDataCache.current = nextSongData;
-                  // changeUpNextSongData(upNextSongDataCache.current);
 
-                  timeIntervalId = setInterval(showPopup, 40000);
+                  intervalRef.current = setInterval(showPopup, 40000);
                 }
 
                 return undefined;
@@ -118,7 +123,10 @@ const UpNextSongPopup = (props: Props) => {
 
     return () => {
       if (timeoutId) clearTimeout(timeoutId);
-      if (timeIntervalId) clearInterval(timeIntervalId);
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
     };
   }, [queue.position, queue.songIds, showPopup]);
 
