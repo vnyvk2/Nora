@@ -1,5 +1,5 @@
 {
-  "id": "e1dae13d-bff8-43fe-a36f-ea1365bf6a9b",
+  "id": "7b620427-93f9-4fae-a0ef-f1a96fcda70f",
   "prevId": "c87ba4a9-09f6-421a-8238-57bb22cd8218",
   "version": "7",
   "dialect": "postgresql",
@@ -3065,6 +3065,13 @@
           "primaryKey": false,
           "notNull": true
         },
+        "skip_count": {
+          "name": "skip_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
         "path": {
           "name": "path",
           "type": "text",
@@ -3325,6 +3332,27 @@
           "columns": [
             {
               "expression": "is_blacklisted",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_songs_skip_count_title": {
+          "name": "idx_songs_skip_count_title",
+          "columns": [
+            {
+              "expression": "skip_count",
+              "isExpression": false,
+              "asc": false,
+              "nulls": "last"
+            },
+            {
+              "expression": "title",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
