@@ -21,6 +21,7 @@ const UpNextSongPopup = (props: Props) => {
   const navigate = useNavigate();
 
   const { onPopupAppears, isSemiTransparent = false, className } = props;
+  const { registerUpNextPopupFn } = useContext(AppUpdateContext);
 
   const [upNextSongData, setUpNextSongData] = useState<SongData>();
   const upNextSongDataCache = useRef<SongData>(null as unknown as SongData);
@@ -33,6 +34,11 @@ const UpNextSongPopup = (props: Props) => {
     setUpNextSongData(upNextSongDataCache.current);
     setTimeout(() => setUpNextSongData(undefined), 10000);
   }, []);
+
+  // Register showPopup so external callers (e.g. hover on Next button) can trigger it.
+  useEffect(() => {
+    registerUpNextPopupFn(showPopup);
+  }, [registerUpNextPopupFn, showPopup]);
 
   useEffect(() => {
     let ctrlPressed = false;
