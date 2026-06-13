@@ -14,6 +14,7 @@ import Checkbox from '../Checkbox';
 import Img from '../Img';
 import ReleaseNotesAppUpdateInfo from './ReleaseNotesAppUpdateInfo';
 import Version from './Version';
+import { parseMarkdownLinks } from './VersionNote';
 
 const ReleaseNotesPrompt = () => {
   const appUpdatesState = useStore(store, (state) => state.appUpdatesState);
@@ -113,7 +114,7 @@ const ReleaseNotesPrompt = () => {
             key={`important note ${index + 1}`}
             className="latest-version-important-note mb-2 max-w-[90%] font-medium"
           >
-            {note}
+            {parseMarkdownLinks(note)}
           </li>
         );
       });

@@ -16,7 +16,7 @@ export function parseChangelog(markdown: string): Changelog {
       const rawText = token.text || '';
       const lines = rawText
         .split('\n')
-        .map(line => line.replace(/^[>\s#*!-]*\[?!?(TIP|NOTE|IMPORTANT|WARNING|CAUTION)\]?\s*/i, '').trim())
+        .map(line => line.replace(/^[>\s#*!-]*\[!(TIP|NOTE|IMPORTANT|WARNING|CAUTION)\]\s*/i, '').replace(/<br\s*\/?>/gi, '').trim())
         .filter(line => line.length > 0);
       
       if (lines.length > 0) {
@@ -94,7 +94,7 @@ export function parseChangelog(markdown: string): Changelog {
     // 3. Collect List Items
     if (token.type === 'list' && currentCategory) {
       for (const item of token.items) {
-        currentVersion.notes[currentCategory].push({ note: item.text });
+        currentVersion.notes[currentCategory].push({ note: item.text.replace(/<br\s*\/?>/gi, '').trim() });
       }
     }
   }

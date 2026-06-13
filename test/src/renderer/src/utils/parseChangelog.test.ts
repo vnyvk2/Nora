@@ -153,4 +153,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     expect(changelog.versions[0].notes.knownIssues).toEqual([]);
     expect(changelog.versions[0].notes.developerUpdates).toEqual([]);
   });
+
+  it('should strip br tags from blockquotes and note items', () => {
+    const markdown = `> [!NOTE]
+> Important note.<br>With line.
+
+## [1.0.0] - 2025-01-01
+
+### Added
+- Item with br tag.<br/>
+- Item with another br tag.<br>
+`;
+    const changelog = parseChangelog(markdown);
+    expect(changelog.latestVersion.importantNotes).toEqual(['Important note.With line.']);
+    expect(changelog.versions[0].notes.new).toEqual([
+      { note: 'Item with br tag.' },
+      { note: 'Item with another br tag.' }
+    ]);
+  });
 });
