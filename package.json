@@ -39,7 +39,7 @@
   },
   "releaseNotes": {
     "json": "https://raw.githubusercontent.com/Sandakan/Nora/master/release-notes.json",
-    "md": "https://raw.githubusercontent.com/Sandakan/Nora/master/changelog.md"
+    "md": "https://raw.githubusercontent.com/Sandakan/Nora/master/CHANGELOG.md"
   },
   "repository": {
     "type": "git",
