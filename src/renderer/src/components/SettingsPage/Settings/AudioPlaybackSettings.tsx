@@ -90,6 +90,10 @@ const AudioPlaybackSettings = () => {
                     const val = e.currentTarget.valueAsNumber;
                     setPlaybackRateInterval(val);
                     storage.playback.setPlaybackOptions('playbackRate', val);
+                    store.setState((state) => ({
+                      ...state,
+                      player: { ...state.player, playbackRate: val }
+                    }));
                   }}
                   style={playbackRateSeekBarCssProperties}
                   title={`${playbackRateInterval}x`}
@@ -105,6 +109,10 @@ const AudioPlaybackSettings = () => {
               clickHandler={() => {
                 setPlaybackRateInterval(1);
                 storage.playback.setPlaybackOptions('playbackRate', 1);
+                store.setState((state) => ({
+                  ...state,
+                  player: { ...state.player, playbackRate: 1 }
+                }));
               }}
             />
           </div>
