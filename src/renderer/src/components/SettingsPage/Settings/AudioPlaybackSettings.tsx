@@ -1,4 +1,4 @@
-import { store } from '@renderer/store/store';
+import { dispatch, store } from '@renderer/store/store';
 import { useStore } from '@tanstack/react-store';
 import { useEffect, useState, type CSSProperties } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -90,10 +90,7 @@ const AudioPlaybackSettings = () => {
                     const val = e.currentTarget.valueAsNumber;
                     setPlaybackRateInterval(val);
                     storage.playback.setPlaybackOptions('playbackRate', val);
-                    store.setState((state) => ({
-                      ...state,
-                      player: { ...state.player, playbackRate: val }
-                    }));
+                    dispatch({ type: 'UPDATE_PLAYBACK_RATE', data: val });
                   }}
                   style={playbackRateSeekBarCssProperties}
                   title={`${playbackRateInterval}x`}
@@ -109,10 +106,7 @@ const AudioPlaybackSettings = () => {
               clickHandler={() => {
                 setPlaybackRateInterval(1);
                 storage.playback.setPlaybackOptions('playbackRate', 1);
-                store.setState((state) => ({
-                  ...state,
-                  player: { ...state.player, playbackRate: 1 }
-                }));
+                dispatch({ type: 'UPDATE_PLAYBACK_RATE', data: 1 });
               }}
             />
           </div>
