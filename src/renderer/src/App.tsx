@@ -186,6 +186,16 @@ export default function App() {
     usePlayerNavigation(player, playerQueue, toggleSongPlayback, recordListeningData);
   skipForwardRef.current = handleSkipForwardClick;
 
+  // ? UP NEXT POPUP TRIGGER
+  const showUpNextPopupRef = useRef<(() => void) | null>(null);
+
+  const registerUpNextPopupFn = useCallback((fn: () => void) => {
+    showUpNextPopupRef.current = fn;
+  }, []);
+
+  const showUpNextSongPopup = useCallback(() => {
+    showUpNextPopupRef.current?.();
+  }, []);
   // ? INITIALIZE APP UPDATES
   // App updates hook handles checking for updates and showing release notes
   const { updateAppUpdatesState } = useAppUpdates({
@@ -298,6 +308,8 @@ export default function App() {
       updatePlayerType,
       handleSkipBackwardClick,
       handleSkipForwardClick,
+      showUpNextSongPopup,
+      registerUpNextPopupFn,
       updateSongPosition,
       updateVolume,
       toggleMutedState,
@@ -330,6 +342,8 @@ export default function App() {
     updatePlayerType,
     handleSkipBackwardClick,
     handleSkipForwardClick,
+    showUpNextSongPopup,
+    registerUpNextPopupFn,
     updateSongPosition,
     updateVolume,
     toggleMutedState,
