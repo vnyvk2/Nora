@@ -53,12 +53,12 @@ const TitleBarContainer = (props: Props) => {
 
   return (
     <div
-      className={`mini-player-title-bar z-10 flex h-[15%] max-h-[2.25rem] w-full justify-end opacity-0 transition-[visibility,opacity] select-none group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100 ${
+      className={`mini-player-title-bar z-10 flex h-[15%] max-h-[2.25rem] w-full justify-end opacity-0 transition-[visibility,opacity] select-none group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100 [-webkit-app-region:drag] ${
         !isCurrentSongPlaying ? 'visible opacity-100' : ''
       }`}
     >
       <div
-        className={`special-controls-container flex transition-[visibility,opacity] ${
+        className={`special-controls-container flex transition-[visibility,opacity] [-webkit-app-region:no-drag] ${
           isLyricsVisible
             ? 'invisible opacity-0 group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100'
             : ''
@@ -87,7 +87,7 @@ const TitleBarContainer = (props: Props) => {
           clickHandler={() => toggleAlwaysOnTop(!isMiniPlayerAlwaysOnTop)}
         />
       </div>
-      <div className="window-controls-container flex">
+      <div className="window-controls-container flex [-webkit-app-region:no-drag]">
         <Button
           className="minimize-btn m-0! flex h-full items-center justify-center rounded-none! border-0! bg-[transparent]! px-2! text-center text-xl -outline-offset-2 transition-[background] ease-in-out hover:bg-[hsla(0deg,0%,80%,0.5)]! focus-visible:outline!"
           clickHandler={() => window.api.windowControls.minimizeApp()}

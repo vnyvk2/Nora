@@ -57,10 +57,7 @@ export default function MiniPlayer(props: MiniPlayerProps) {
     };
   }, [manageKeyboardShortcuts]);
 
-  const handleSkipForwardClickWithParams = useCallback(
-    () => handleSkipForwardClick('USER_SKIP'),
-    [handleSkipForwardClick]
-  );
+  const handleSkipForwardClickWithParams = () => handleSkipForwardClick('USER_SKIP');
 
   // Controls and UI chrome are visible when: hovered, focused, or paused
   const showControls = !isCurrentSongPlaying;
@@ -85,6 +82,10 @@ export default function MiniPlayer(props: MiniPlayerProps) {
             isLyricsVisible ? 'blur-[1rem]! brightness-[.25]!' : ''
           } ${!isCurrentSongPlaying ? 'blur-[1rem] brightness-75' : 'blur-0 brightness-100'}`}
         />
+        {/* Persistent top drag region */}
+        <div className="absolute top-0 left-0 h-10 w-full z-0 [-webkit-app-region:drag]"></div>
+
+
         {/* Gradient overlay — only visible when NOT showing lyrics, fades in on hover */}
         <div
           className={`absolute inset-0 transition-opacity duration-200 ${
@@ -109,9 +110,9 @@ export default function MiniPlayer(props: MiniPlayerProps) {
       {/* ═══ TIER 2 (MIDDLE): Song Info ══════════════════════════════════════ */}
       {/* flex-1 min-h-0 = flexible sponge, can shrink to 0px.                 */}
       {/* Song info fades in on hover/focus/paused.                            */}
-      <div className="relative z-10 flex min-h-0 flex-1 flex-col items-center justify-center overflow-hidden">
+      <div className="relative z-10 flex min-h-0 flex-1 flex-col items-center justify-center overflow-hidden pointer-events-none">
         <div
-          className={`song-info-container text-font-color-white flex w-full flex-col items-center justify-center px-4 text-center transition-[visibility,opacity] duration-200 ${
+          className={`song-info-container text-font-color-white flex w-full flex-col items-center justify-center px-4 text-center transition-[visibility,opacity] duration-200 pointer-events-auto ${
             isLyricsVisible
               ? 'invisible opacity-0'
               : showControls
@@ -200,7 +201,7 @@ export default function MiniPlayer(props: MiniPlayerProps) {
             className="play-pause-btn text-font-color-white dark:text-font-color-white m-0! h-fit shrink-0 cursor-pointer rounded-none! border-0! bg-[transparent]! p-0! outline-offset-1 focus-visible:outline! dark:bg-[transparent]!"
             tooltipLabel={t('player.playPause')}
             iconClassName="text-5xl!"
-            clickHandler={toggleSongPlayback}
+            clickHandler={() => toggleSongPlayback()}
             iconName={isCurrentSongPlaying ? 'pause_circle' : 'play_circle'}
             removeFocusOnClick
           />

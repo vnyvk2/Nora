@@ -84,9 +84,9 @@ export default function App() {
 
   useEffect(() => {
     if (playerType === 'mini') {
-      navigate({ to: '/mini-player/' });
+      navigate({ to: '/mini-player' });
     } else if (playerType === 'full') {
-      navigate({ to: '/fullscreen-player/' });
+      navigate({ to: '/fullscreen-player' });
     } else if (window.location.hash === '#/' || window.location.hash.startsWith('#/mini-player') || window.location.hash.startsWith('#/fullscreen-player')) {
       navigate({ to: '/main-player/home' });
     }
