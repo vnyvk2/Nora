@@ -106,6 +106,20 @@ export function useKeyboardShortcuts(dependencies: KeyboardShortcutDependencies)
 
   const manageKeyboardShortcuts = useCallback(
     (e: KeyboardEvent) => {
+      if (
+        document.activeElement?.tagName === 'INPUT' ||
+        document.activeElement?.tagName === 'TEXTAREA'
+      )
+        return;
+
+      // Ignore hardware media keys since they are handled natively by MediaSession
+      if (
+        ['MediaTrackNext', 'MediaTrackPrevious', 'MediaPlayPause', 'MediaStop'].includes(e.key) &&
+        'mediaSession' in navigator
+      ) {
+        return;
+      }
+
       const shortcuts = storage.keyboardShortcuts
         .getKeyboardShortcuts()
         .flatMap((category) => category.shortcuts);

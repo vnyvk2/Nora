@@ -145,7 +145,7 @@ export function useMediaSession(player: HTMLAudioElement, dependencies: MediaSes
       safeSetActionHandler('pause', () => toggleSongPlayback(false));
       safeSetActionHandler('play', () => toggleSongPlayback(true));
       safeSetActionHandler('previoustrack', handleSkipBackwardClick);
-      safeSetActionHandler('nexttrack', () => handleSkipForwardClick('PLAYER_SKIP'));
+      safeSetActionHandler('nexttrack', () => handleSkipForwardClick('USER_SKIP'));
 
       // Seek handlers
       safeSetActionHandler('seekbackward', () => {

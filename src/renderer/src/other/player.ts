@@ -430,11 +430,13 @@ class AudioPlayer {
     const shouldPlay = forcePlay !== undefined ? forcePlay : this.audio.paused;
 
     if (shouldPlay) {
-      if (this.audio.readyState > 0) {
+      if (this.audio.readyState > 0 && this.audio.paused) {
         await this.play();
       }
     } else {
-      await this.pause();
+      if (!this.audio.paused) {
+        await this.pause();
+      }
     }
   }
 
