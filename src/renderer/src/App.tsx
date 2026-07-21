@@ -38,7 +38,8 @@ const SongUnplayableErrorPrompt = lazy(() => import('./components/SongUnplayable
 // ? SCREENS
 
 // import { TanStackRouterDevtools } from '@tanstack/react-router-devtools';
-import { Outlet } from '@tanstack/react-router';
+import { Outlet, useNavigate } from '@tanstack/react-router';
+import { useStore } from '@tanstack/react-store';
 
 // ? UTILS
 import { dispatch, store } from './store/store';
@@ -77,6 +78,19 @@ export default function App() {
 
   const AppRef = useRef(null as HTMLDivElement | null);
   // const storeRef = useRef<AppReducer>(undefined);
+
+  const navigate = useNavigate();
+  const playerType = useStore(store, (state) => state.playerType);
+
+  useEffect(() => {
+    if (playerType === 'mini') {
+      navigate({ to: '/mini-player/' });
+    } else if (playerType === 'full') {
+      navigate({ to: '/fullscreen-player/' });
+    } else if (window.location.hash === '#/' || window.location.hash.startsWith('#/mini-player') || window.location.hash.startsWith('#/fullscreen-player')) {
+      navigate({ to: '/main-player/home' });
+    }
+  }, [playerType, navigate]);
 
   const { isOnline } = useNetworkConnectivity();
 

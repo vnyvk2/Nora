@@ -138,7 +138,7 @@ const LyricsContainer = (props: Props) => {
 
   return (
     <div
-      className={`mini-player-lyrics-container absolute top-0 flex h-full w-full flex-col items-center overflow-hidden px-4 py-12 transition-[filter] select-none group-focus-within:blur-xs group-focus-within:brightness-50 group-hover:blur-xs group-hover:brightness-50 ${
+      className={`mini-player-lyrics-container absolute inset-0 flex flex-col items-center overflow-y-auto overflow-x-hidden px-4 py-12 transition-[filter,opacity] select-none ${
         !isCurrentSongPlaying ? 'blur-xs brightness-50' : ''
       }`}
       id="miniPlayerLyricsContainer"
