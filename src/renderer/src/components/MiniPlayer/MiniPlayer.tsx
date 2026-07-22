@@ -30,6 +30,7 @@ export default function MiniPlayer(props: MiniPlayerProps) {
   const isRepeating = useStore(store, (state) => state.player.isRepeating);
   const isShuffling = useStore(store, (state) => state.player.isShuffling);
   const preferences = useStore(store, (state) => state.localStorage.preferences);
+  const queue = useStore(store, (state) => state.localStorage.queue);
 
   const { data: settings } = useSuspenseQuery({
     ...settingsQuery.all,
@@ -82,6 +83,7 @@ export default function MiniPlayer(props: MiniPlayerProps) {
   const [isLyricsVisible, setIsLyricsVisible] = useState(false);
   const [isQueueVisible, setIsQueueVisible] = useState(false);
   const [isVolumeHovered, setIsVolumeHovered] = useState(false);
+  const [queueDirection, setQueueDirection] = useState<'down' | 'up'>('down');
 
   const manageKeyboardShortcuts = useCallback(
     (e: KeyboardEvent) => {
@@ -101,8 +103,20 @@ export default function MiniPlayer(props: MiniPlayerProps) {
   }, [manageKeyboardShortcuts]);
 
   useEffect(() => {
-    window.api.miniPlayer.toggleMiniPlayerQueue(isQueueVisible);
-  }, [isQueueVisible]);
+    window.api.miniPlayer.toggleMiniPlayerQueue(isQueueVisible, queue.songIds.length);
+    if (!isQueueVisible) setQueueDirection('down');
+  }, [isQueueVisible, queue.songIds.length]);
+
+  // Listen for queue direction changes from main process
+  useEffect(() => {
+    const handleDirectionChange = (_: unknown, direction: 'up' | 'down') => {
+      setQueueDirection(direction);
+    };
+    window.api.miniPlayer.onQueueDirectionChange(handleDirectionChange);
+    return () => {
+      window.api.miniPlayer.removeQueueDirectionChangeListener(handleDirectionChange);
+    };
+  }, []);
 
   const handleSkipForwardClickWithParams = () => handleSkipForwardClick('USER_SKIP');
 
@@ -133,7 +147,6 @@ export default function MiniPlayer(props: MiniPlayerProps) {
             iconClassName: 'material-icons-round-outlined mr-2',
             handlerFunction: () => {
               setIsQueueVisible((prev) => !prev);
-              setIsLyricsVisible(false);
             }
           },
           {
@@ -172,7 +185,6 @@ export default function MiniPlayer(props: MiniPlayerProps) {
                 iconClassName: 'material-icons-round-outlined mr-2',
                 handlerFunction: () => {
                   setIsLyricsVisible((prev) => !prev);
-                  setIsQueueVisible(false);
                 }
               }
             ]
@@ -275,7 +287,7 @@ export default function MiniPlayer(props: MiniPlayerProps) {
     // At rest (playing, not hovered): ONLY album art visible.
     // On hover/focus/paused: title bar, song info, controls, seekbar fade in.
     <div
-      className={`mini-player dark group !bg-dark-background-color-1 dark:!bg-dark-background-color-1 relative flex h-full flex-col overflow-hidden !transition-none select-none ${
+      className={`mini-player dark group !bg-dark-background-color-1 dark:!bg-dark-background-color-1 relative flex h-full ${isQueueVisible && queueDirection === 'up' ? 'flex-col-reverse' : 'flex-col'} overflow-hidden !transition-none select-none ${
         !isCurrentSongPlaying && 'paused'
       } ${preferences?.isReducedMotion ? 'reduced-motion' : ''} ${className}`}
       onContextMenu={handleContextMenu}
@@ -318,7 +330,9 @@ export default function MiniPlayer(props: MiniPlayerProps) {
       {/* flex-1 min-h-0 = flexible sponge, can shrink to 0px.                 */}
       {/* Song info fades in on hover/focus/paused.                            */}
       <div
-        className="relative z-10 flex min-h-0 flex-1 flex-col items-center justify-center overflow-hidden pointer-events-auto"
+        className={`relative z-10 flex min-h-0 flex-col items-center justify-center overflow-hidden pointer-events-auto ${
+          isQueueVisible ? 'flex-none' : 'flex-1'
+        }`}
         onContextMenu={handleContextMenu}
         onClick={handleContextMenu}
       >
@@ -482,7 +496,6 @@ export default function MiniPlayer(props: MiniPlayerProps) {
               onClick={(e) => {
                 e.currentTarget.blur();
                 setIsLyricsVisible((prevState) => !prevState);
-                setIsQueueVisible(false);
               }}
               title={t('player.lyrics')}
             >
@@ -531,7 +544,7 @@ export default function MiniPlayer(props: MiniPlayerProps) {
               className="queue-btn text-font-color-white dark:text-font-color-white mini-optional-btn m-0! h-fit shrink-0 cursor-pointer rounded-none! border-0! bg-[transparent]! p-1! outline-offset-1 focus-visible:outline! dark:bg-[transparent]!"
               tooltipLabel={t('player.currentQueue', 'Queue')}
               iconClassName="material-icons-round-outlined text-lg!"
-              clickHandler={() => { setIsQueueVisible((prev) => !prev); setIsLyricsVisible(false); }}
+              clickHandler={() => setIsQueueVisible((prev) => !prev)}
               iconName="queue_music"
               removeFocusOnClick
             />

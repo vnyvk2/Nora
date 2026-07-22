@@ -501,8 +501,12 @@ const log = {
 const miniPlayer = {
   toggleMiniPlayerAlwaysOnTop: (isMiniPlayerAlwaysOnTop: boolean): Promise<void> =>
     ipcRenderer.invoke('app/toggleMiniPlayerAlwaysOnTop', isMiniPlayerAlwaysOnTop),
-  toggleMiniPlayerQueue: (isExpanded: boolean): void =>
-    ipcRenderer.send('app/toggleMiniPlayerQueue', isExpanded)
+  toggleMiniPlayerQueue: (isExpanded: boolean, queueItemCount?: number): void =>
+    ipcRenderer.send('app/toggleMiniPlayerQueue', isExpanded, queueItemCount),
+  onQueueDirectionChange: (callback: (_: unknown, direction: 'up' | 'down') => void) =>
+    ipcRenderer.on('app/miniPlayerQueueDirection', callback),
+  removeQueueDirectionChangeListener: (callback: (_: unknown, direction: 'up' | 'down') => void) =>
+    ipcRenderer.removeListener('app/miniPlayerQueueDirection', callback)
 };
 
 // $ APP SETTINGS HELPER FUNCTIONS
