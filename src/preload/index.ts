@@ -500,7 +500,9 @@ const log = {
 // $ APP MINI PLAYER CONTROLS
 const miniPlayer = {
   toggleMiniPlayerAlwaysOnTop: (isMiniPlayerAlwaysOnTop: boolean): Promise<void> =>
-    ipcRenderer.invoke('app/toggleMiniPlayerAlwaysOnTop', isMiniPlayerAlwaysOnTop)
+    ipcRenderer.invoke('app/toggleMiniPlayerAlwaysOnTop', isMiniPlayerAlwaysOnTop),
+  toggleMiniPlayerQueue: (isExpanded: boolean): void =>
+    ipcRenderer.send('app/toggleMiniPlayerQueue', isExpanded)
 };
 
 // $ APP SETTINGS HELPER FUNCTIONS

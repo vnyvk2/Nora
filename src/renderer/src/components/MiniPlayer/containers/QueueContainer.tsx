@@ -99,22 +99,27 @@ const QueueContainer = (props: Props) => {
             >
               {song.title}
             </div>
-            <div className="text-font-color-white/50 truncate text-xs leading-tight">
+            <div className="text-font-color-white/60 truncate text-xs leading-tight mt-0.5">
               {song.artists?.map((a) => a.name).join(', ') || t('common.unknownArtist')}
+            </div>
+            <div className="text-font-color-white/40 truncate text-xs leading-tight mt-0.5">
+              {song.album?.name || t('common.unknownAlbum', 'Unknown Album')}
             </div>
           </div>
 
-          {/* Duration */}
-          <div className="text-font-color-white/40 shrink-0 text-xs tabular-nums">
-            {duration.timeString}
+          {/* Right Side: Duration & Favorite */}
+          <div className="flex flex-col items-end justify-center shrink-0 gap-1">
+            <div className="text-font-color-white/40 text-xs tabular-nums">
+              {duration.timeString}
+            </div>
+            {song.isAFavorite ? (
+              <span className="material-icons-round text-font-color-highlight dark:text-dark-font-color-highlight text-[14px]">
+                favorite
+              </span>
+            ) : (
+              <div className="h-[14px] w-[14px]" />
+            )}
           </div>
-
-          {/* Favorite indicator */}
-          {song.isAFavorite && (
-            <span className="material-icons-round text-font-color-highlight dark:text-dark-font-color-highlight shrink-0 text-xs">
-              favorite
-            </span>
-          )}
         </button>
       );
     });
@@ -123,15 +128,11 @@ const QueueContainer = (props: Props) => {
   if (!isQueueVisible) return null;
 
   return (
-    <div
-      className={`mini-player-queue-container absolute inset-0 z-20 flex flex-col overflow-hidden transition-opacity duration-200 ${
-        isQueueVisible ? 'opacity-100' : 'pointer-events-none opacity-0'
-      }`}
-    >
+    <div className="mini-player-queue-container relative z-20 flex flex-1 flex-col overflow-hidden bg-[rgba(33,34,38,0.5)] backdrop-blur-md border-t border-white/5">
       {/* Header */}
-      <div className="shrink-0 px-4 pt-10 pb-2">
+      <div className="shrink-0 px-4 py-3">
         <div className="flex items-center justify-between">
-          <span className="text-font-color-white text-sm font-semibold uppercase tracking-wider opacity-60">
+          <span className="text-font-color-white text-xs font-semibold uppercase tracking-wider opacity-60">
             {t('currentQueuePage.queue', 'Queue')}
           </span>
           <span className="text-font-color-white/40 text-xs">
@@ -145,7 +146,7 @@ const QueueContainer = (props: Props) => {
       {/* Song List */}
       <div
         ref={listRef}
-        className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-1 pb-20"
+        className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-1 pb-4 custom-scrollbar"
       >
         {queuedSongs && queuedSongs.length > 0 ? (
           songItems

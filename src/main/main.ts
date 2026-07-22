@@ -847,6 +847,21 @@ export async function changePlayerType(type: PlayerTypes) {
   }
 }
 
+export async function expandMiniPlayer(isExpanded: boolean) {
+  if (mainWindow && playerType === 'mini') {
+    if (isExpanded) {
+      mainWindow.setMaximumSize(MINI_PLAYER_MAX_SIZE_X, 600);
+      const [width] = mainWindow.getSize();
+      mainWindow.setSize(width, 500, true);
+    } else {
+      const { miniPlayerHeight } = await getUserSettings();
+      mainWindow.setMaximumSize(MINI_PLAYER_MAX_SIZE_X, MINI_PLAYER_MAX_SIZE_Y);
+      const [width] = mainWindow.getSize();
+      mainWindow.setSize(width, miniPlayerHeight || MINI_PLAYER_MIN_SIZE_Y, true);
+    }
+  }
+}
+
 function manageWindowOnDisplayMetricsChange(primaryDisplay: Display) {
   const currentDisplay = screen.getDisplayMatching(mainWindow.getBounds());
 

@@ -100,6 +100,10 @@ export default function MiniPlayer(props: MiniPlayerProps) {
     };
   }, [manageKeyboardShortcuts]);
 
+  useEffect(() => {
+    window.api.miniPlayer.toggleMiniPlayerQueue(isQueueVisible);
+  }, [isQueueVisible]);
+
   const handleSkipForwardClickWithParams = () => handleSkipForwardClick('USER_SKIP');
 
   const handleTogglePinnedControl = useCallback(
@@ -357,8 +361,8 @@ export default function MiniPlayer(props: MiniPlayerProps) {
       {/* ═══ TIER 3 (BOTTOM): SeekBar + Controls ════════════════════════════ */}
       {/* Fades in on hover/focus/paused — hidden at rest like the old design.  */}
       <div
-        className={`relative z-30 w-full transition-[visibility,opacity] duration-200 ${
-          showControls
+        className={`relative z-30 w-full shrink-0 transition-[visibility,opacity] duration-200 ${
+          showControls || isQueueVisible
             ? 'visible opacity-100'
             : 'invisible opacity-0 group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100'
         }`}
@@ -538,7 +542,7 @@ export default function MiniPlayer(props: MiniPlayerProps) {
       {/* ── Lyrics overlay (absolute, within the entire window when lyrics on) ── */}
       <LyricsContainer isLyricsVisible={isLyricsVisible} />
 
-      {/* ── Queue overlay (absolute, within the entire window when queue on) ── */}
+      {/* ── Queue container (flex, takes up remaining space when expanded) ── */}
       <QueueContainer isQueueVisible={isQueueVisible} />
     </div>
   );
