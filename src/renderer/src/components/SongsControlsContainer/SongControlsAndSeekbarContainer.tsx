@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { AppUpdateContext } from '../../contexts/AppUpdateContext';
 import Button from '../Button';
 import NavLink from '../NavLink';
+import CustomLyricsIcon from '../../assets/images/svg/custom-lyrics-icon.png';
 import SeekBarContainer from './SeekBarContainer';
 
 const SongControlsAndSeekbarContainer = () => {
@@ -103,11 +104,11 @@ const SongControlsAndSeekbarContainer = () => {
           className={`lyrics-btn group after:bg-font-color-highlight dark:after:bg-dark-font-color-highlight !m-0 flex items-center justify-center !border-0 bg-transparent !p-0 outline-offset-1 after:absolute after:h-1 after:w-1 after:translate-y-4 after:rounded-full after:opacity-0 after:transition-opacity hover:bg-transparent focus-visible:!outline dark:bg-transparent dark:hover:bg-transparent [&.active]:after:opacity-100`}
           title={t('player.lyrics')}
         >
-          <span
-            className={`material-icons-round group-[.active]:text-font-color-highlight! dark:group-[.active]:text-dark-font-color-highlight! !text-2xl opacity-60 transition-[color,_opacity] group-[.active]:opacity-100! hover:opacity-80`}
-          >
-            notes
-          </span>
+          <img
+            src={CustomLyricsIcon}
+            className="h-6 w-6 opacity-60 transition-opacity hover:opacity-80 group-[.active]:opacity-100"
+            alt="Lyrics"
+          />
         </NavLink>
       </div>
       <SeekBarContainer />

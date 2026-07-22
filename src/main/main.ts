@@ -64,10 +64,10 @@ const MAIN_WINDOW_MIN_ZOOM_FACTOR = 0.5;
 const MAIN_WINDOW_MAX_ZOOM_FACTOR = 3;
 
 const MINI_PLAYER_MIN_SIZE_X = 270;
-const MINI_PLAYER_MIN_SIZE_Y = 200;
+const MINI_PLAYER_MIN_SIZE_Y = 100;
 const MINI_PLAYER_MAX_SIZE_X = 510;
 const MINI_PLAYER_MAX_SIZE_Y = 300;
-const MINI_PLAYER_ASPECT_RATIO = 17 / 10;
+const MINI_PLAYER_ASPECT_RATIO = 0;
 const abortController = new AbortController();
 const DEFAULT_OPEN_DIALOG_OPTIONS: OpenDialogOptions = {
   title: 'Select a Music Folder',

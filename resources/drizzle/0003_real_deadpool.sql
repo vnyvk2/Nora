@@ -1,0 +1,2 @@
+ALTER TABLE "user_settings" ADD COLUMN IF NOT EXISTS "zoom_factor" double precision DEFAULT 0.8 NOT NULL;--> statement-breakpoint
+ALTER TABLE "user_settings" ADD COLUMN IF NOT EXISTS "mini_player_pinned_controls" json DEFAULT '["love","lyrics","volume"]'::json NOT NULL;

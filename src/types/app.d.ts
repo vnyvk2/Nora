@@ -436,6 +436,7 @@ declare global {
     zoomFactor: number;
     windowState: string;
     recentSearches: string[];
+    miniPlayerPinnedControls: string[];
     customLrcFilesSaveLocation: string | null;
     lastFmSessionName: string | null;
     lastFmSessionKey: string | null;

@@ -70,10 +70,7 @@ const ContextMenu = memo(() => {
           return (
             <ContextMenuItem
               key={menuItem.label}
-              label={menuItem.label}
-              iconName={menuItem.iconName}
-              iconClassName={menuItem.iconClassName}
-              handlerFunction={menuItem.handlerFunction}
+              {...menuItem}
             />
           );
         }),

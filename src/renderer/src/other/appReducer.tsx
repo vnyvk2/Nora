@@ -618,6 +618,7 @@ export const USER_DATA_TEMPLATE: UserData = {
   useSystemTheme: true,
   lastFmSessionKey: null,
   lastFmSessionName: null,
+  miniPlayerPinnedControls: ['love', 'lyrics', 'volume'],
   mainWindowX: null,
   mainWindowY: null,
   mainWindowWidth: null,

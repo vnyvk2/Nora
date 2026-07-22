@@ -456,6 +456,12 @@ export const userSettings = pgTable(
     // Recent searches (stored as JSON array)
     recentSearches: json('recent_searches').$type<string[]>().notNull().default([]),
 
+    // Mini Player pinned controls
+    miniPlayerPinnedControls: json('mini_player_pinned_controls')
+      .$type<string[]>()
+      .notNull()
+      .default(['love', 'lyrics', 'volume']),
+
     // Optional settings
     customLrcFilesSaveLocation: text('custom_lrc_files_save_location'),
 

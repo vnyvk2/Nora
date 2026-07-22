@@ -107,10 +107,13 @@ export function useKeyboardShortcuts(dependencies: KeyboardShortcutDependencies)
   const manageKeyboardShortcuts = useCallback(
     (e: KeyboardEvent) => {
       if (
+        e.repeat ||
         document.activeElement?.tagName === 'INPUT' ||
-        document.activeElement?.tagName === 'TEXTAREA'
-      )
+        document.activeElement?.tagName === 'TEXTAREA' ||
+        (document.activeElement?.tagName === 'BUTTON' && (e.key === ' ' || e.key === 'Enter'))
+      ) {
         return;
+      }
 
       // Ignore hardware media keys since they are handled natively by MediaSession
       if (

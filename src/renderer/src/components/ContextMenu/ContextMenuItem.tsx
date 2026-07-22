@@ -1,30 +1,60 @@
 /* eslint-disable jsx-a11y/no-static-element-interactions */
 /* eslint-disable jsx-a11y/click-events-have-key-events */
 
-import { useContext } from 'react';
+import { useContext, useState } from 'react';
 
 import { AppUpdateContext } from '../../contexts/AppUpdateContext';
 
 const ContextMenuItem = (props: ContextMenuItem) => {
   const { updateContextMenuData } = useContext(AppUpdateContext);
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  const hasInnerMenus = props.innerContextMenus && props.innerContextMenus.length > 0;
+
   return (
-    <div
-      className={`menu-item ${
-        props.class || ''
-      } text-font-color-black hover:bg-context-menu-list-hover/75 dark:text-font-color-white dark:hover:bg-dark-context-menu-list-hover/25 flex cursor-pointer flex-row items-center px-4 py-1 text-sm font-light`}
-      onClick={() => {
-        if (!props.isContextMenuItemSeperator && props.handlerFunction) {
-          props.handlerFunction();
-          updateContextMenuData(false, []);
-        }
-      }}
-    >
-      {props.iconName && (
-        <span className={`material-icons-round icon mr-4 text-lg ${props.iconClassName}`}>
-          {props.iconName}
-        </span>
-      )}{' '}
-      {props.label}
+    <div className="flex flex-col">
+      <div
+        className={`menu-item ${
+          props.class || ''
+        } text-font-color-black hover:bg-context-menu-list-hover/75 dark:text-font-color-white dark:hover:bg-dark-context-menu-list-hover/25 flex cursor-pointer flex-row items-center px-4 py-1 text-sm font-light justify-between`}
+        onClick={(e) => {
+          e.stopPropagation();
+          if (hasInnerMenus) {
+            setIsExpanded(!isExpanded);
+          } else if (!props.isContextMenuItemSeperator && props.handlerFunction) {
+            props.handlerFunction();
+            updateContextMenuData(false, []);
+          }
+        }}
+      >
+        <div className="flex items-center">
+          {props.iconName && (
+            <span className={`material-icons-round icon mr-4 text-lg ${props.iconClassName}`}>
+              {props.iconName}
+            </span>
+          )}{' '}
+          {props.label}
+        </div>
+        {hasInnerMenus && (
+          <span className="material-icons-round text-lg ml-4 opacity-50">
+            {isExpanded ? 'expand_less' : 'expand_more'}
+          </span>
+        )}
+      </div>
+
+      {hasInnerMenus && (
+        <div
+          className={`flex flex-col overflow-hidden transition-all duration-200 ${
+            isExpanded ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'
+          }`}
+        >
+          <div className="pl-6 py-1 border-l-2 border-font-color-black/10 dark:border-font-color-white/10 ml-4 my-1">
+            {props.innerContextMenus?.map((innerItem, index) => (
+              <ContextMenuItem key={`${innerItem.label}-${index}`} {...innerItem} />
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
