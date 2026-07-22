@@ -6,6 +6,7 @@ import NoSongsImage from '@renderer/assets/images/svg/Sun_Monochromatic.svg';
 import Button from '@renderer/components/Button';
 import Img from '@renderer/components/Img';
 import MainContainer from '@renderer/components/MainContainer';
+import QueueTabs from '@renderer/components/QueueTabs';
 import Song from '@renderer/components/SongsPage/Song';
 import VirtualizedList from '@renderer/components/VirtualizedList';
 import { AppUpdateContext } from '@renderer/contexts/AppUpdateContext';
@@ -193,6 +194,7 @@ function RouteComponent() {
     >
       {queueInfo && (
         <>
+          <QueueTabs />
           <div className="title-container text-font-color-highlight dark:text-dark-font-color-highlight mt-2 mb-4 flex items-center justify-between pr-4 text-3xl font-medium">
             {t('currentQueuePage.queue')}
             <div className="other-controls-container float-right flex">
