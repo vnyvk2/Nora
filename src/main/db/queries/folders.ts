@@ -1,6 +1,6 @@
 import { basename } from 'path';
 
-import { and, eq, inArray, isNull } from 'drizzle-orm';
+import { eq, inArray, isNull } from 'drizzle-orm';
 
 import { db } from '../db';
 import { musicFolders } from '../schema';
@@ -104,14 +104,7 @@ const createOrUpdateFolderStructure = async (
   const folder = await trx
     .select()
     .from(musicFolders)
-    .where(
-      and(
-        eq(musicFolders.path, structure.path),
-        parentId === null
-          ? isNull(musicFolders.parentId)
-          : eq(musicFolders.parentId, parentId as number)
-      )
-    )
+    .where(eq(musicFolders.path, structure.path))
     .limit(1);
   const selectedFolder = folder.at(0);
 
@@ -131,7 +124,8 @@ const createOrUpdateFolderStructure = async (
 
   if (structure.subFolders.length > 0) {
     for (const subFolder of structure.subFolders) {
-      const res = await createOrUpdateFolderStructure(subFolder, trx, folder[0]?.id);
+      const parentFolderId = selectedFolder ? selectedFolder.id : addedFolders[0].id;
+      const res = await createOrUpdateFolderStructure(subFolder, trx, parentFolderId);
 
       addedFolders.push(...res.addedFolders);
       updatedFolders.push(...res.updatedFolders);
@@ -246,4 +240,9 @@ export const addFoldersToBlacklist = async (folderIds: number[]) => {
     .update(musicFolders)
     .set({ isBlacklisted: true, isBlacklistedUpdatedAt: new Date() })
     .where(inArray(musicFolders.id, folderIds));
+};
+
+export const deleteFolders = async (folderIds: number[], trx: DB | DBTransaction = db) => {
+  if (folderIds.length === 0) return;
+  await trx.delete(musicFolders).where(inArray(musicFolders.id, folderIds));
 };

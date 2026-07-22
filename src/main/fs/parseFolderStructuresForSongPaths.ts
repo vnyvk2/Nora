@@ -65,13 +65,20 @@ export const doesFolderExistInFolderStructure = async (
   return false;
 };
 
+const isSubPath = (parentDir: string, childDir: string) => {
+  const relative = path.relative(parentDir, childDir);
+  return relative && !relative.startsWith('..') && !path.isAbsolute(relative);
+};
+
 const updateStructure = (
   structure: FolderStructure,
   musicFolders: FolderStructure[]
 ): FolderStructure[] => {
   let isFound = false;
 
-  for (const folder of musicFolders) {
+  const filteredMusicFolders = musicFolders.filter((folder) => !isSubPath(structure.path, folder.path));
+
+  for (const folder of filteredMusicFolders) {
     if (folder.path === structure.path) {
       folder.stats = structure.stats;
 
@@ -87,7 +94,7 @@ const updateStructure = (
       isFound = true;
       break;
     }
-    if (structure.path.includes(folder.path)) {
+    if (isSubPath(folder.path, structure.path)) {
       const updatedSubFolders = updateStructure(structure, folder.subFolders);
       folder.subFolders = updatedSubFolders;
       isFound = true;
@@ -95,8 +102,8 @@ const updateStructure = (
     }
   }
 
-  if (!isFound) musicFolders.push(structure);
-  return musicFolders;
+  if (!isFound) filteredMusicFolders.push(structure);
+  return filteredMusicFolders;
 };
 
 const clearAllFolderWatches = async () => {
@@ -140,9 +147,14 @@ const parseFolderStructuresForSongPaths = async (folderStructures: FolderStructu
     }
   });
 
-  const { addedFolders } = await saveFolderStructures(folderStructures, true);
+  const { addedFolders, updatedFolders } = await saveFolderStructures(folderStructures, true);
 
-  const allFilesData = addedFolders
+  const selectedPaths = new Set(foldersWithStatData.map((f) => f.path));
+  const relevantFolders = [...addedFolders, ...updatedFolders].filter((f) =>
+    selectedPaths.has(f.path)
+  );
+
+  const allFilesData = relevantFolders
     .map((folder) =>
       getAllFilePathsFromFolder(folder.path).map((songPath) => ({ songPath, folder }))
     )

@@ -1,9 +1,9 @@
 import path from 'path';
 
-import { getAllFolders } from '@main/db/queries/folders';
+import { deleteFolders, getAllFolders } from '@main/db/queries/folders';
 import { getSongsInFolders } from '@main/db/queries/songs';
 
-import { saveAbortController } from '../fs/controlAbortControllers';
+import { closeAbortController, saveAbortController } from '../fs/controlAbortControllers';
 import logger from '../logger';
 import { sendMessageToRenderer } from '../main';
 import removeSongsFromLibrary from '../removeSongsFromLibrary';
@@ -102,14 +102,16 @@ const removeMusicFolder = async (folderPath: string): Promise<boolean> => {
       }
     }
 
-    // const updatedMusicFolders = removeFoldersFromStructure(relatedFolderPaths);
+    const relatedFolderIds = relatedFolders.map((f) => f.id);
+    if (relatedFolderIds.length > 0) {
+      await deleteFolders(relatedFolderIds);
+    }
 
-    // setUserData('musicFolders', updatedMusicFolders);
-    // closeAbortController(folderPath);
+    closeAbortController(folderPath);
 
-    // logger.debug(`Deleted ${relatedFolderPaths.length} directories.`, {
-    //   relatedFolders: relatedFolderPaths
-    // });
+    logger.debug(`Deleted ${relatedFolderIds.length} directories.`, {
+      relatedFolders: relatedFolders.map((f) => f.path)
+    });
     return true;
   }
   return false;

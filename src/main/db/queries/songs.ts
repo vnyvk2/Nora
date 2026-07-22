@@ -95,7 +95,7 @@ export async function getSongsInFolders(
     where: (s) =>
       and(
         inArray(s.folderId, validFolderIds),
-        eq(s.isBlacklisted, options?.skipBlacklistedSongs ?? false)
+        options?.skipBlacklistedSongs ? eq(s.isBlacklisted, false) : undefined
       )
   });
 
