@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, powerMonitor, shell } from 'electron';
+import { app, BrowserWindow, ipcMain, powerMonitor, shell, Menu } from 'electron';
 
 import addArtworkToAPlaylist from './core/addArtworkToAPlaylist';
 import addSongsFromFolderStructures from './core/addMusicFolder';
@@ -557,6 +557,28 @@ export function initializeIPC(mainWindow: BrowserWindow, abortSignal: AbortSigna
     ipcMain.handle('app/toggleMiniPlayerAlwaysOnTop', (_, isMiniPlayerAlwaysOnTop: boolean) =>
       toggleMiniPlayerAlwaysOnTop(isMiniPlayerAlwaysOnTop)
     );
+
+    ipcMain.handle('app/showMiniPlayerContextMenu', (event, template: any[]) => {
+      return new Promise((resolve) => {
+        const buildMenu = (items: any[]): any[] => items.map((item) => {
+          const newItem = { ...item };
+          if (newItem.submenu) {
+            newItem.submenu = buildMenu(newItem.submenu);
+          }
+          if (newItem.id && !newItem.submenu && newItem.type !== 'separator') {
+            newItem.click = () => resolve(newItem.id);
+          }
+          return newItem;
+        });
+
+        const menu = Menu.buildFromTemplate(buildMenu(template));
+        const win = BrowserWindow.fromWebContents(event.sender) || mainWindow;
+        menu.popup({
+          window: win ?? undefined,
+          callback: () => resolve(null)
+        });
+      });
+    });
 
     ipcMain.handle('app/toggleAutoLaunch', (_, autoLaunchState: boolean) =>
       toggleAutoLaunch(autoLaunchState)

@@ -133,136 +133,101 @@ export default function MiniPlayer(props: MiniPlayerProps) {
   );
 
   const handleContextMenu = useCallback(
-    (e: React.MouseEvent) => {
+    async (e: React.MouseEvent) => {
       e.preventDefault();
-      const getToggleIcon = (controlId: string) =>
-        pinnedControls.includes(controlId) ? 'check_box' : 'check_box_outline_blank';
+      e.stopPropagation();
+      const template = [
+        {
+          id: 'toggleQueue',
+          label: t('player.currentQueue', 'Queue')
+        },
+        {
+          label: t('player.playbackControls', 'Playback Controls'),
+          submenu: [
+            { id: 'togglePlay', label: t('player.playPause', 'Stop') },
+            { id: 'toggleLove', label: t('player.likeDislike', 'Love') },
+            { id: 'toggleShuffle', label: t('player.shuffle', 'Shuffle') },
+            { id: 'toggleRepeat', label: t('player.repeat', 'Repeat') },
+            { id: 'toggleLyrics', label: t('player.lyrics', 'Show Lyrics') }
+          ]
+        },
+        {
+          id: 'search',
+          label: t('player.search', 'Search')
+        },
+        {
+          id: 'toggleAlwaysOnTop',
+          label: t(
+            `miniPlayer.${
+              settings?.isMiniPlayerAlwaysOnTop ? 'alwaysOnTopDisabled' : 'alwaysOnTopEnabled'
+            }`,
+            settings?.isMiniPlayerAlwaysOnTop ? 'Disable Always on Top' : 'Always on Top'
+          )
+        },
+        { type: 'separator' },
+        {
+          label: t('miniPlayer.panelLayout', 'Panel Layout'),
+          submenu: [
+            { id: 'pin_love', label: t('player.likeDislike', 'Love'), type: 'checkbox', checked: pinnedControls.includes('love') },
+            { id: 'pin_lyrics', label: t('player.lyrics', 'Lyrics'), type: 'checkbox', checked: pinnedControls.includes('lyrics') },
+            { id: 'pin_volume', label: t('player.muteUnmute', 'Volume'), type: 'checkbox', checked: pinnedControls.includes('volume') },
+            { id: 'pin_queue', label: t('player.currentQueue', 'Queue'), type: 'checkbox', checked: pinnedControls.includes('queue') },
+            { id: 'pin_shuffle', label: t('player.shuffle', 'Shuffle'), type: 'checkbox', checked: pinnedControls.includes('shuffle') },
+            { id: 'pin_repeat', label: t('player.repeat', 'Repeat'), type: 'checkbox', checked: pinnedControls.includes('repeat') },
+            { id: 'pin_stop', label: t('player.playPause', 'Stop'), type: 'checkbox', checked: pinnedControls.includes('stop') }
+          ]
+        }
+      ];
 
-      updateContextMenuData(
-        true,
-        [
-          {
-            label: t('player.currentQueue', 'Queue'),
-            iconName: 'queue_music',
-            iconClassName: 'material-icons-round-outlined mr-2',
-            handlerFunction: () => {
-              setIsQueueVisible((prev) => !prev);
-            }
-          },
-          {
-            label: t('player.playbackControls', 'Playback Controls'),
-            iconName: 'tune',
-            iconClassName: 'material-icons-round-outlined mr-2',
-            handlerFunction: null,
-            innerContextMenus: [
-              {
-                label: t('player.playPause', 'Stop'),
-                iconName: 'stop',
-                iconClassName: 'material-icons-round-outlined mr-2',
-                handlerFunction: () => isCurrentSongPlaying && toggleSongPlayback()
-              },
-              {
-                label: t('player.likeDislike', 'Love'),
-                iconName: 'favorite_border',
-                iconClassName: 'material-icons-round-outlined mr-2',
-                handlerFunction: () => currentSongData.isKnownSource && toggleIsFavorite(!isAFavorite)
-              },
-              {
-                label: t('player.shuffle', 'Shuffle'),
-                iconName: 'shuffle',
-                iconClassName: 'material-icons-round-outlined mr-2',
-                handlerFunction: () => toggleQueueShuffle()
-              },
-              {
-                label: t('player.repeat', 'Repeat'),
-                iconName: 'repeat',
-                iconClassName: 'material-icons-round-outlined mr-2',
-                handlerFunction: () => toggleRepeat()
-              },
-              {
-                label: t('player.lyrics', 'Show Lyrics'),
-                iconName: 'notes',
-                iconClassName: 'material-icons-round-outlined mr-2',
-                handlerFunction: () => {
-                  setIsLyricsVisible((prev) => !prev);
-                }
-              }
-            ]
-          },
-          {
-            label: t('player.search', 'Search'),
-            iconName: 'search',
-            iconClassName: 'material-icons-round-outlined mr-2',
-            handlerFunction: () => {
-              /* TODO: open search */
-            }
-          },
-          {
-            label: t(
-              `miniPlayer.${
-                settings?.isMiniPlayerAlwaysOnTop ? 'alwaysOnTopDisabled' : 'alwaysOnTopEnabled'
-              }`,
-              settings?.isMiniPlayerAlwaysOnTop ? 'Disable Always on Top' : 'Always on Top'
-            ),
-            iconName: settings?.isMiniPlayerAlwaysOnTop ? 'move_down' : 'move_up',
-            iconClassName: 'material-icons-round-outlined mr-2',
-            handlerFunction: () => toggleAlwaysOnTop(!settings?.isMiniPlayerAlwaysOnTop)
-          },
-          { label: '', isContextMenuItemSeperator: true, handlerFunction: () => true },
-          {
-            label: t('miniPlayer.panelLayout', 'Panel Layout'),
-            iconName: 'dashboard_customize',
-            iconClassName: 'material-icons-round-outlined mr-2',
-            handlerFunction: null,
-            innerContextMenus: [
-              {
-                label: t('player.likeDislike', 'Love'),
-                iconName: getToggleIcon('love'),
-                iconClassName: 'material-icons-round-outlined mr-2',
-                handlerFunction: () => handleTogglePinnedControl('love')
-              },
-              {
-                label: t('player.lyrics', 'Lyrics'),
-                iconName: getToggleIcon('lyrics'),
-                iconClassName: 'material-icons-round-outlined mr-2',
-                handlerFunction: () => handleTogglePinnedControl('lyrics')
-              },
-              {
-                label: t('player.muteUnmute', 'Volume'),
-                iconName: getToggleIcon('volume'),
-                iconClassName: 'material-icons-round-outlined mr-2',
-                handlerFunction: () => handleTogglePinnedControl('volume')
-              },
-              {
-                label: t('player.currentQueue', 'Queue'),
-                iconName: getToggleIcon('queue'),
-                iconClassName: 'material-icons-round-outlined mr-2',
-                handlerFunction: () => handleTogglePinnedControl('queue')
-              },
-              {
-                label: t('player.shuffle', 'Shuffle'),
-                iconName: getToggleIcon('shuffle'),
-                iconClassName: 'material-icons-round-outlined mr-2',
-                handlerFunction: () => handleTogglePinnedControl('shuffle')
-              },
-              {
-                label: t('player.repeat', 'Repeat'),
-                iconName: getToggleIcon('repeat'),
-                iconClassName: 'material-icons-round-outlined mr-2',
-                handlerFunction: () => handleTogglePinnedControl('repeat')
-              },
-              {
-                label: t('player.playPause', 'Stop'),
-                iconName: getToggleIcon('stop'),
-                iconClassName: 'material-icons-round-outlined mr-2',
-                handlerFunction: () => handleTogglePinnedControl('stop')
-              }
-            ]
-          }
-        ],
-        e.pageX,
-        e.pageY
-      );
+      const clickedId = await window.api.miniPlayer.showContextMenu(template);
+
+      switch (clickedId) {
+        case 'toggleQueue':
+          setIsQueueVisible((prev) => !prev);
+          break;
+        case 'togglePlay':
+          if (isCurrentSongPlaying) toggleSongPlayback();
+          break;
+        case 'toggleLove':
+          if (currentSongData.isKnownSource) toggleIsFavorite(!isAFavorite);
+          break;
+        case 'toggleShuffle':
+          toggleQueueShuffle();
+          break;
+        case 'toggleRepeat':
+          toggleRepeat();
+          break;
+        case 'toggleLyrics':
+          setIsLyricsVisible((prev) => !prev);
+          break;
+        case 'search':
+          /* TODO: open search */
+          break;
+        case 'toggleAlwaysOnTop':
+          toggleAlwaysOnTop(!settings?.isMiniPlayerAlwaysOnTop);
+          break;
+        case 'pin_love':
+          handleTogglePinnedControl('love');
+          break;
+        case 'pin_lyrics':
+          handleTogglePinnedControl('lyrics');
+          break;
+        case 'pin_volume':
+          handleTogglePinnedControl('volume');
+          break;
+        case 'pin_queue':
+          handleTogglePinnedControl('queue');
+          break;
+        case 'pin_shuffle':
+          handleTogglePinnedControl('shuffle');
+          break;
+        case 'pin_repeat':
+          handleTogglePinnedControl('repeat');
+          break;
+        case 'pin_stop':
+          handleTogglePinnedControl('stop');
+          break;
+      }
     },
     [
       pinnedControls,
@@ -309,9 +274,9 @@ export default function MiniPlayer(props: MiniPlayerProps) {
         {/* Gradient overlay — only visible when NOT showing lyrics, fades in on hover */}
         <div
           className={`absolute inset-0 transition-opacity duration-200 ${
-            isLyricsVisible || isQueueVisible
+            isLyricsVisible
               ? 'opacity-0'
-              : showControls
+              : showControls || isQueueVisible
                 ? 'bg-[linear-gradient(180deg,_rgba(2,_0,_36,_0)_0%,_rgba(33,_34,_38,_0.9)_90%)] opacity-100'
                 : 'bg-[linear-gradient(180deg,_rgba(2,_0,_36,_0)_0%,_rgba(33,_34,_38,_0.9)_90%)] opacity-0 group-focus-within:opacity-100 group-hover:opacity-100'
           }`}
@@ -334,11 +299,10 @@ export default function MiniPlayer(props: MiniPlayerProps) {
           isQueueVisible ? 'flex-none' : 'flex-1'
         }`}
         onContextMenu={handleContextMenu}
-        onClick={handleContextMenu}
       >
         <div
           className={`song-info-container text-font-color-white flex w-full flex-col items-center justify-center px-4 text-center transition-[visibility,opacity] duration-200 pointer-events-none ${
-            isLyricsVisible || isQueueVisible
+            isLyricsVisible
               ? 'invisible opacity-0'
               : showControls
                 ? 'visible opacity-100'

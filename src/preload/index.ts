@@ -506,7 +506,9 @@ const miniPlayer = {
   onQueueDirectionChange: (callback: (_: unknown, direction: 'up' | 'down') => void) =>
     ipcRenderer.on('app/miniPlayerQueueDirection', callback),
   removeQueueDirectionChangeListener: (callback: (_: unknown, direction: 'up' | 'down') => void) =>
-    ipcRenderer.removeListener('app/miniPlayerQueueDirection', callback)
+    ipcRenderer.removeListener('app/miniPlayerQueueDirection', callback),
+  showContextMenu: (template: any[]): Promise<string | null> =>
+    ipcRenderer.invoke('app/showMiniPlayerContextMenu', template)
 };
 
 // $ APP SETTINGS HELPER FUNCTIONS
