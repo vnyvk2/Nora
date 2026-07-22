@@ -207,8 +207,6 @@ export const reducer = (state: AppReducer, action: AppReducerStateActions): AppR
     case 'UPDATE_PLAYER_TYPE': {
       const type = action.data ?? state.playerType;
 
-      if (type !== 'full') window.api.windowControls.changePlayerType(type);
-
       return {
         ...state,
         bodyBackgroundImage: undefined,

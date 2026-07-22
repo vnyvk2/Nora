@@ -227,9 +227,19 @@ export default function App() {
     playSong
   });
 
-  const updatePlayerType = useCallback((type: PlayerTypes) => {
+  const updatePlayerType = useCallback(async (type: PlayerTypes) => {
     if (store.state.playerType !== type) {
-      dispatch({ type: 'UPDATE_PLAYER_TYPE', data: type });
+      if (type === 'normal') {
+        await window.api.windowControls.changePlayerType(type);
+        dispatch({ type: 'UPDATE_PLAYER_TYPE', data: type });
+      } else if (type === 'mini') {
+        dispatch({ type: 'UPDATE_PLAYER_TYPE', data: type });
+        setTimeout(() => {
+          window.api.windowControls.changePlayerType(type);
+        }, 50);
+      } else {
+        dispatch({ type: 'UPDATE_PLAYER_TYPE', data: type });
+      }
     }
   }, []);
 
