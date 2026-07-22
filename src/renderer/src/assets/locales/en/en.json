@@ -1099,7 +1099,7 @@
     "PLAYLIST_EXPORT_FAILED": "Error occurred when exporting `{{name}}` playlist.",
     "PLAYLIST_IMPORT_SUCCESS": "Imported `{{name}}` playlist successfully.",
     "PLAYLIST_IMPORT_FAILED": "Failed to import the playlist.",
-    "PLAYLIST_IMPORT_FAILED_DUE_TO_SONGS_OUTSIDE_LIBRARY": "Found $t(common.songWithCount, {\"count\":{{count}}}) outside the library when importing a playlist which is not supported.",
+    "PLAYLIST_IMPORT_FAILED_DUE_TO_SONGS_OUTSIDE_LIBRARY": "Skipped $t(common.songWithCount, {\"count\":{{count}}}) that could not be found in your Nora library.",
     "PLAYLIST_IMPORT_FAILED_DUE_TO_INVALID_FILE_DATA": "Failed to import the playlist because user selected a file with invalid file data.",
     "PLAYLIST_IMPORT_FAILED_DUE_TO_INVALID_FILE_EXTENSION": "Playlist import failed because the selected file type wasn't '.m3u8'.",
     "PLAYLIST_IMPORT_TO_EXISTING_PLAYLIST": "Imported $t(common.songWithCount, {\"count\":{{count}}}) to the existing `{{name}}` playlist.",

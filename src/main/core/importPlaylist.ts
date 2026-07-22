@@ -16,23 +16,22 @@ const DEFAULT_EXPORT_DIALOG_OPTIONS: OpenDialogOptions = {
   buttonLabel: 'Select M3U8 file',
   properties: ['openFile'],
   filters: [
-    { name: 'M3U8 Files', extensions: ['m3u8'] },
+    { name: 'M3U/M3U8 Files', extensions: ['m3u', 'm3u8'] },
     { name: 'All Files', extensions: ['*'] }
   ]
 };
 
-const isASongPath = (text: string) => {
+const resolveSongPath = (text: string, m3uDir: string): string | null => {
   const textLine = text.trim();
-  const isTextLineAPath = path.isAbsolute(textLine);
+  if (textLine.startsWith('#') || textLine.length === 0) return null;
 
-  if (isTextLineAPath) {
-    const textLinePath = textLine;
-    const textLinePathExt =
-      path.extname(textLinePath).split('.').pop() || path.extname(textLinePath);
-    const isPathToASong = appPreferences.supportedMusicExtensions.includes(textLinePathExt);
-    return isPathToASong;
+  const absolutePath = path.isAbsolute(textLine) ? textLine : path.resolve(m3uDir, textLine);
+  
+  const ext = path.extname(absolutePath).split('.').pop() || '';
+  if (appPreferences.supportedMusicExtensions.includes(ext.toLowerCase())) {
+    return absolutePath;
   }
-  return false;
+  return null;
 };
 
 const importPlaylist = async (targetPlaylistId?: number) => {
@@ -42,18 +41,24 @@ const importPlaylist = async (targetPlaylistId?: number) => {
     if (destinations) {
       const [filePath] = destinations;
 
-      if (path.extname(filePath) === '.m3u8') {
-        const fileName = path.basename(filePath).replace(/\.m3u8$/gim, '');
+      const ext = path.extname(filePath).toLowerCase();
+      if (ext === '.m3u8' || ext === '.m3u') {
+        const fileName = path.basename(filePath).replace(/\.m3u8?$/gim, '');
+        const m3uDir = path.dirname(filePath);
         const text = await readFile(filePath, 'utf-8');
         const textArr = text.replaceAll('\r', '').split('\n');
 
-        if (textArr[0] === '#EXTM3U') {
-          const unavailableSongPaths: string[] = [];
-          const availSongIdsForPlaylist: string[] = [];
+        const unavailableSongPaths: string[] = [];
+        const availSongIdsForPlaylist: string[] = [];
 
-          // Extract song paths and deduplicate
-          const songPathsRaw = textArr.filter((line) => isASongPath(line));
-          const songPaths = Array.from(new Set(songPathsRaw));
+        // Extract song paths and deduplicate, resolving relative paths
+        const songPathsRaw = textArr
+          .map((line) => resolveSongPath(line, m3uDir))
+          .filter((line): line is string => line !== null);
+          
+        const songPaths = Array.from(new Set(songPathsRaw));
+
+        if (songPaths.length > 0) {
 
           const availableSongs = await getSongsInPathList(songPaths);
 
@@ -77,9 +82,13 @@ const importPlaylist = async (targetPlaylistId?: number) => {
               }
             );
             sendMessageToRenderer({
-              messageCode: 'PLAYLIST_IMPORT_SUCCESS',
-              data: { count: availSongIdsForPlaylist.length }
+              messageCode: 'PLAYLIST_IMPORT_FAILED_DUE_TO_SONGS_OUTSIDE_LIBRARY',
+              data: { count: unavailableSongPaths.length }
             });
+            
+            if (availSongIdsForPlaylist.length === 0) {
+               return; // Exit early if NO songs are available, so it doesn't fall through to invalid data
+            }
           }
 
           if (availSongIdsForPlaylist.length > 0) {
@@ -167,20 +176,21 @@ const importPlaylist = async (targetPlaylistId?: number) => {
               }
             }
           }
+        } else {
+          logger.warn(
+            `Failed to import the playlist because user selected a file with invalid file data (no valid song paths found).`,
+            {
+              filePath,
+              firstLine: textArr[0]
+            }
+          );
+          return sendMessageToRenderer({
+            messageCode: 'PLAYLIST_IMPORT_FAILED_DUE_TO_INVALID_FILE_DATA'
+          });
         }
-        logger.warn(
-          `Failed to import the playlist because user selected a file with invalid file data.`,
-          {
-            filePath,
-            firstLine: textArr[0]
-          }
-        );
-        return sendMessageToRenderer({
-          messageCode: 'PLAYLIST_IMPORT_FAILED_DUE_TO_INVALID_FILE_DATA'
-        });
       }
       logger.warn(
-        `Failed to import the playlist because user selected a file with a different extension other than 'm3u8'.`,
+        `Failed to import the playlist because user selected a file with a different extension other than 'm3u' or 'm3u8'.`,
         { filePath }
       );
       return sendMessageToRenderer({
