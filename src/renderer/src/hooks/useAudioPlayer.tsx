@@ -2,7 +2,7 @@ import roundTo from '@common/roundTo';
 import { useEffect } from 'react';
 
 import AudioPlayer from '../other/player';
-import { getQueue } from '../other/queueSingleton';
+import { getQueuesManager } from '../other/queuesManager';
 
 const LOW_RESPONSE_DURATION = 100;
 const DURATION = 1000;
@@ -11,20 +11,20 @@ const DURATION = 1000;
 let playerInstance: AudioPlayer | null = null;
 
 /**
- * Custom hook to get the singleton AudioPlayer instance. The player instance integrates with
- * PlayerQueue for automatic song loading. Persists across component re-renders.
+ * Custom hook to manage the AudioPlayer singleton instance. Initializes the player with the shared
+ * PlayerQueue if it hasn't been created yet.
  *
- * @returns The AudioPlayer instance with integrated queue
+ * @returns The singleton AudioPlayer instance
  */
 export function useAudioPlayer() {
-  // Get the singleton queue directly (not via hook)
-  const queue = getQueue();
+  const manager = getQueuesManager();
 
-  // Initialize player with queue on first call
   if (!playerInstance) {
-    playerInstance = new AudioPlayer(queue);
+    playerInstance = new AudioPlayer(manager);
   }
 
+  // Cleanup on unmount is typically not needed for a global singleton player,
+  // but we provide it here for completeness if the app ever fully unmounts
   useEffect(() => {
     // Store the non-null playerInstance in a local variable for readability
     const player = playerInstance!;

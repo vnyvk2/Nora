@@ -30,7 +30,7 @@ import { usePromptMenu } from './hooks/usePromptMenu';
 import { useQueueManagement } from './hooks/useQueueManagement';
 import { useUserPreferences } from './hooks/useUserPreferences';
 import { useWindowManagement } from './hooks/useWindowManagement';
-import { initializeQueue } from './other/queueSingleton';
+import { initializeQueuesManager } from './other/queuesManager';
 
 // ? PROMPTS
 const SongUnplayableErrorPrompt = lazy(() => import('./components/SongUnplayableErrorPrompt'));
@@ -61,16 +61,15 @@ window.addEventListener('offline', updateNetworkStatus);
 // console.log('Command line args', window.api.properties.commandLineArgs);
 
 export default function App() {
-  // ? INITIALIZE QUEUE (singleton with store sync)
-  // This must be called before useAudioPlayer to ensure queue is ready
+  useDynamicTheme();
+
   useEffect(() => {
-    initializeQueue();
+    initializeQueuesManager();
   }, []);
 
-  // ? INITIALIZE PLAYER AND QUEUE (singleton instances via custom hooks)
+  // ? INITIALIZE PLAYER (singleton instances via custom hooks)
   const player = useAudioPlayer();
   const audio = player.audio;
-  const playerQueue = player.queue; // Access properties directly from AudioPlayer instance
 
   // const [content, dispatch] = useReducer(reducer, DEFAULT_REDUCER_DATA);
   // // Had to use a Ref in parallel with the Reducer to avoid an issue that happens when using content.* not giving the intended data in useCallback functions even though it was added as a dependency of that function.
@@ -174,7 +173,6 @@ export default function App() {
     refStartPlay
   } = usePlayerControl(
     player, // Pass AudioPlayer instance instead of audio element
-    playerQueue,
     recordListeningData,
     managePlaybackErrors,
     changePromptMenuData,
@@ -185,7 +183,7 @@ export default function App() {
   // Player navigation hook handles skip forward/backward and queue navigation
   // Songs are auto-loaded by AudioPlayer on queue position changes
   const { changeQueueCurrentSongIndex, handleSkipBackwardClick, handleSkipForwardClick } =
-    usePlayerNavigation(player, playerQueue, toggleSongPlayback, recordListeningData);
+    usePlayerNavigation(player, toggleSongPlayback, recordListeningData);
 
   // ? INITIALIZE APP UPDATES
   // App updates hook handles checking for updates and showing release notes
@@ -223,7 +221,6 @@ export default function App() {
     toggleShuffling,
     changeUpNextSongData
   } = useQueueManagement({
-    playerQueue,
     playSong
   });
 
@@ -277,7 +274,6 @@ export default function App() {
   // This hook now manages all player event listeners, IPC controls, and lifecycle events
   useAppLifecycle({
     audio: player, // Pass AudioPlayer instance
-    playerQueue,
     toggleShuffling,
     toggleRepeat,
     playSongFromUnknownSource,

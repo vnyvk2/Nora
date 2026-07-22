@@ -47,10 +47,10 @@ const SimilarTracksContainer = (props: Props) => {
     const songs = similarTracks.sortedAvailTracks.map((song) => song.songData!);
     const queueSongIds = songs.filter((song) => !song.isBlacklisted).map((song) => song.songId);
 
-    let currentSongIndex = queue.position ?? queue.songIds.indexOf(currentSongData.songId);
+    let currentSongIndex = queue.queues[queue.currentQueueIndex].position ?? queue.queues[queue.currentQueueIndex].songIds.indexOf(currentSongData.songId);
     const duplicateIds: number[] = [];
 
-    const newQueue = queue.songIds.filter((id) => {
+    const newQueue = queue.queues[queue.currentQueueIndex].songIds.filter((id) => {
       const isADuplicate = queueSongIds.includes(id);
       if (isADuplicate) duplicateIds.push(id);
 
@@ -58,7 +58,7 @@ const SimilarTracksContainer = (props: Props) => {
     });
 
     for (const duplicateId of duplicateIds) {
-      const duplicateIdPosition = queue.songIds.indexOf(duplicateId);
+      const duplicateIdPosition = queue.queues[queue.currentQueueIndex].songIds.indexOf(duplicateId);
 
       if (
         duplicateIdPosition !== -1 &&
@@ -81,8 +81,8 @@ const SimilarTracksContainer = (props: Props) => {
     ]);
   }, [
     similarTracks.sortedAvailTracks,
-    queue.position,
-    queue.songIds,
+    queue.queues[queue.currentQueueIndex].position,
+    queue.queues[queue.currentQueueIndex].songIds,
     currentSongData.songId,
     updateQueueData,
     addNewNotifications,

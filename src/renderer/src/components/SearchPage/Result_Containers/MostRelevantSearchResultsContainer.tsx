@@ -68,14 +68,14 @@ const MostRelevantSearchResultsContainer = (props: Props) => {
             label: t('common.playNext'),
             iconName: 'shortcut',
             handlerFunction: () => {
-              const newQueue = queue.songIds.filter((id) => id !== firstResult.songId);
-              const duplicateSongIndex = queue.songIds.indexOf(firstResult.songId);
+              const newQueue = queue.queues[queue.currentQueueIndex].songIds.filter((id) => id !== firstResult.songId);
+              const duplicateSongIndex = queue.queues[queue.currentQueueIndex].songIds.indexOf(firstResult.songId);
 
               const currentSongIndex =
-                queue.position !== undefined &&
+                queue.queues[queue.currentQueueIndex].position !== undefined &&
                 duplicateSongIndex !== -1 &&
-                duplicateSongIndex < queue.position
-                  ? queue.position - 1
+                duplicateSongIndex < queue.queues[queue.currentQueueIndex].position
+                  ? queue.queues[queue.currentQueueIndex].position - 1
                   : undefined;
 
               newQueue.splice(
@@ -104,7 +104,7 @@ const MostRelevantSearchResultsContainer = (props: Props) => {
             label: t('common.addToQueue'),
             iconName: 'queue',
             handlerFunction: () => {
-              updateQueueData(undefined, [...queue.songIds, firstResult.songId]);
+              updateQueueData(undefined, [...queue.queues[queue.currentQueueIndex].songIds, firstResult.songId]);
               addNewNotifications(
                 [
                   {
@@ -200,7 +200,7 @@ const MostRelevantSearchResultsContainer = (props: Props) => {
             iconName: 'queue',
             handlerFunction: () => {
               updateQueueData(undefined, [
-                ...queue.songIds,
+                ...queue.queues[queue.currentQueueIndex].songIds,
                 ...firstResult.songs.map((song) => song.songId)
               ]);
               addNewNotifications([
@@ -269,8 +269,8 @@ const MostRelevantSearchResultsContainer = (props: Props) => {
             label: t('common.addToQueue'),
             iconName: 'queue',
             handlerFunction: () => {
-              queue.songIds.push(...firstResult.songs.map((song) => song.songId));
-              updateQueueData(undefined, queue.songIds, false);
+              queue.queues[queue.currentQueueIndex].songIds.push(...firstResult.songs.map((song) => song.songId));
+              updateQueueData(undefined, queue.queues[queue.currentQueueIndex].songIds, false);
               addNewNotifications([
                 {
                   id: 'addedToQueue',

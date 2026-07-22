@@ -141,10 +141,10 @@ export const Playlist = (props: PlaylistProp) => {
       })
       .then((songs) => {
         if (Array.isArray(songs)) {
-          queue.songIds.push(
+          queue.queues[queue.currentQueueIndex].songIds.push(
             ...songs.filter((song) => !song.isBlacklisted).map((song) => song.songId)
           );
-          updateQueueData(undefined, queue.songIds);
+          updateQueueData(undefined, queue.queues[queue.currentQueueIndex].songIds);
           addNewNotifications([
             {
               id: 'newSongsToQueue',
@@ -158,7 +158,7 @@ export const Playlist = (props: PlaylistProp) => {
         return undefined;
       })
       .catch((err) => console.error(err));
-  }, [addNewNotifications, multipleSelectionsData, queue.songIds, t, updateQueueData]);
+  }, [addNewNotifications, multipleSelectionsData, queue.queues[queue.currentQueueIndex].songIds, t, updateQueueData]);
 
   const contextMenus: ContextMenuItem[] = useMemo(() => {
     const { multipleSelections: playlistIds } = multipleSelectionsData;
@@ -194,8 +194,8 @@ export const Playlist = (props: PlaylistProp) => {
         handlerFunction: () => {
           if (isMultipleSelectionsEnabled) addToQueueForMultipleSelections();
           else {
-            queue.songIds.push(...props.songs);
-            updateQueueData(undefined, queue.songIds);
+            queue.queues[queue.currentQueueIndex].songIds.push(...props.songs);
+            updateQueueData(undefined, queue.queues[queue.currentQueueIndex].songIds);
             addNewNotifications([
               {
                 id: 'newSongsToQueue',
@@ -330,7 +330,7 @@ export const Playlist = (props: PlaylistProp) => {
     playAllSongs,
     playAllSongsForMultipleSelections,
     props,
-    queue.songIds,
+    queue.queues[queue.currentQueueIndex].songIds,
     t,
     toggleMultipleSelections,
     updateMultipleSelections,

@@ -108,7 +108,7 @@ function PlaylistInfoPage() {
     const validSongIds = playlistSongs
       .filter((song) => !song.isBlacklisted)
       .map((song) => song.songId);
-    updateQueueData(undefined, [...queue.songIds, ...validSongIds]);
+    updateQueueData(undefined, [...queue.queues[queue.currentQueueIndex].songIds, ...validSongIds]);
     addNewNotifications([
       {
         id: `addedToQueue`,
@@ -118,7 +118,7 @@ function PlaylistInfoPage() {
         })
       }
     ]);
-  }, [addNewNotifications, playlistSongs, queue.songIds, t, updateQueueData]);
+  }, [addNewNotifications, playlistSongs, queue.queues[queue.currentQueueIndex].songIds, t, updateQueueData]);
 
   const shuffleAndPlaySongs = useCallback(
     () =>

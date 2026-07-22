@@ -1,5 +1,4 @@
 import { LOCAL_STORAGE_DEFAULT_TEMPLATE } from '@renderer/other/appReducer';
-import PlayerQueue from '@renderer/other/playerQueue';
 import { dispatch, store } from '@renderer/store/store';
 
 import { version } from '../../../../package.json';
@@ -256,16 +255,12 @@ const setVolumeOptions = <Type extends keyof Volume, Data extends Volume[Type]>(
 
 // QUEUE
 
-const setQueue = (queue: PlayerQueue | PlayerQueueJson) => {
+const setQueue = (queue: QueuesState) => {
   const allItems = getAllItems();
-  const queueJson = queue instanceof PlayerQueue ? queue.toJSON() : queue;
-  setAllItems({ ...allItems, queue: queueJson });
+  setAllItems({ ...allItems, queue });
 };
 
 const getQueue = () => getAllItems().queue;
-
-/** @deprecated Use PlayerQueue.moveToPosition() instead */
-const setCurrentSongIndex = (index: number | null) => setItem('queue', 'position', index ?? 0);
 
 // SORTING STATES
 
@@ -360,7 +355,7 @@ export default {
     setCurrentSongOptions,
     setVolumeOptions
   },
-  queue: { setQueue, getQueue, setCurrentSongIndex },
+  queue: { setQueue, getQueue },
   sortingStates: { setSortingStates, getSortingStates },
   lyricsEditorSettings: { setLyricsEditorSettings, getLyricsEditorSettings },
   keyboardShortcuts: {

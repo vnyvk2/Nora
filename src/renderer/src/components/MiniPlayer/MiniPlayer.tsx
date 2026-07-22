@@ -103,9 +103,9 @@ export default function MiniPlayer(props: MiniPlayerProps) {
   }, [manageKeyboardShortcuts]);
 
   useEffect(() => {
-    window.api.miniPlayer.toggleMiniPlayerQueue(isQueueVisible, queue.songIds.length);
+    window.api.miniPlayer.toggleMiniPlayerQueue(isQueueVisible, queue.queues[queue.currentQueueIndex].songIds.length);
     if (!isQueueVisible) setQueueDirection('down');
-  }, [isQueueVisible, queue.songIds.length]);
+  }, [isQueueVisible, queue.queues[queue.currentQueueIndex].songIds.length]);
 
   // Listen for queue direction changes from main process
   useEffect(() => {

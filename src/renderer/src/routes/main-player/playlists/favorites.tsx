@@ -102,7 +102,7 @@ function FavoritesPlaylistInfoPage() {
     const validSongIds = favoriteSongs
       .filter((song) => !song.isBlacklisted)
       .map((song) => song.songId);
-    updateQueueData(undefined, [...queue.songIds, ...validSongIds]);
+    updateQueueData(undefined, [...queue.queues[queue.currentQueueIndex].songIds, ...validSongIds]);
     addNewNotifications([
       {
         id: `addedToQueue`,
@@ -112,7 +112,7 @@ function FavoritesPlaylistInfoPage() {
         })
       }
     ]);
-  }, [addNewNotifications, favoriteSongs, queue.songIds, t, updateQueueData]);
+  }, [addNewNotifications, favoriteSongs, queue.queues[queue.currentQueueIndex].songIds, t, updateQueueData]);
 
   const shuffleAndPlaySongs = useCallback(
     () =>

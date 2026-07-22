@@ -25,14 +25,14 @@ const QueueContainer = (props: Props) => {
   const listRef = useRef<HTMLDivElement>(null);
 
   const { data: queuedSongs } = useQuery({
-    ...songQuery.queue(queue.songIds),
-    enabled: queue.songIds.length > 0 && isQueueVisible
+    ...songQuery.queue(queue.queues[queue.currentQueueIndex].songIds),
+    enabled: queue.queues[queue.currentQueueIndex].songIds.length > 0 && isQueueVisible
   });
 
   // Auto-scroll to the currently playing song when the queue opens
   useEffect(() => {
     if (isQueueVisible && queuedSongs && listRef.current) {
-      const activeIndex = queue.songIds.indexOf(currentSongId);
+      const activeIndex = queue.queues[queue.currentQueueIndex].songIds.indexOf(currentSongId);
       if (activeIndex >= 0) {
         // Each item is ~52px tall. Scroll so the active item is centered.
         const itemHeight = 52;
@@ -43,7 +43,7 @@ const QueueContainer = (props: Props) => {
         });
       }
     }
-  }, [isQueueVisible, queuedSongs, currentSongId, queue.songIds]);
+  }, [isQueueVisible, queuedSongs, currentSongId, queue.queues[queue.currentQueueIndex].songIds]);
 
   const handleSongClick = useCallback(
     (index: number) => {

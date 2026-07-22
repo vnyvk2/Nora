@@ -629,9 +629,9 @@ class PlayerQueue {
    * @param queueId - Optional queue identifier
    * @param queueType - Optional queue type
    */
-  setMetadata(queueId?: string, queueType?: QueueTypes): void {
-    this.metadata = { queueId, queueType };
-    this.emit('metadataChange', { queueId, queueType });
+  setMetadata(queueId?: string | number, queueType?: QueueTypes, title?: string): void {
+    this.metadata = { queueId: queueId as any, queueType, title };
+    this.emit('metadataChange', { queueId: queueId as any, queueType });
   }
 
   /**

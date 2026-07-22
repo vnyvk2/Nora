@@ -103,7 +103,7 @@ function AlbumInfoPage() {
             clickHandler: () => {
               updateQueueData(
                 undefined,
-                [...queue.songIds, ...albumSongs.map((song) => song.songId)],
+                [...queue.queues[queue.currentQueueIndex].songIds, ...albumSongs.map((song) => song.songId)],
                 false,
                 false
               );

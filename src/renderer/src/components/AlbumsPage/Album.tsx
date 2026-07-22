@@ -120,10 +120,10 @@ export const Album = (props: AlbumProp) => {
       })
       .then((songs) => {
         if (Array.isArray(songs)) {
-          queue.songIds.push(
+          queue.queues[queue.currentQueueIndex].songIds.push(
             ...songs.filter((song) => !song.isBlacklisted).map((song) => song.songId)
           );
-          updateQueueData(undefined, queue.songIds);
+          updateQueueData(undefined, queue.queues[queue.currentQueueIndex].songIds);
           addNewNotifications([
             {
               id: 'newSongsToQueue',
@@ -135,7 +135,7 @@ export const Album = (props: AlbumProp) => {
         return undefined;
       })
       .catch((err) => console.error(err));
-  }, [addNewNotifications, multipleSelectionsData, queue.songIds, t, updateQueueData]);
+  }, [addNewNotifications, multipleSelectionsData, queue.queues[queue.currentQueueIndex].songIds, t, updateQueueData]);
 
   const showAlbumInfoPage = useCallback(
     () =>
@@ -219,8 +219,8 @@ export const Album = (props: AlbumProp) => {
         handlerFunction: () => {
           if (isMultipleSelectionsEnabled) addToQueueForMultipleSelections();
           else {
-            queue.songIds.push(...props.songs.map((song) => song.songId));
-            updateQueueData(undefined, queue.songIds);
+            queue.queues[queue.currentQueueIndex].songIds.push(...props.songs.map((song) => song.songId));
+            updateQueueData(undefined, queue.queues[queue.currentQueueIndex].songIds);
             addNewNotifications([
               {
                 id: 'newSongsToQueue',
@@ -277,7 +277,7 @@ export const Album = (props: AlbumProp) => {
     playAlbumSongsForMultipleSelections,
     props.albumId,
     props.songs,
-    queue.songIds,
+    queue.queues[queue.currentQueueIndex].songIds,
     showAlbumInfoPage,
     t,
     toggleMultipleSelections,

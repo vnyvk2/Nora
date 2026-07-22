@@ -113,7 +113,7 @@ function GenreInfoPage() {
             clickHandler: () => {
               updateQueueData(
                 undefined,
-                [...queue.songIds, ...genreSongs.map((song) => song.songId)],
+                [...queue.queues[queue.currentQueueIndex].songIds, ...genreSongs.map((song) => song.songId)],
                 false,
                 false
               );

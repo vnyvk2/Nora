@@ -4,6 +4,7 @@ import { dispatch, store } from '../store/store';
 import storage from '../utils/localStorage';
 import { equalizerBandHertzData } from './equalizerData';
 import PlayerQueue from './playerQueue';
+import type { QueuesManager } from './queuesManager';
 
 const AUDIO_FADE_DURATION = 250;
 
@@ -37,7 +38,7 @@ class AudioPlayer {
   private listeners: Map<PlayerEventType, Set<PlayerEventCallback<unknown>>>;
 
   audio: HTMLAudioElement;
-  queue: PlayerQueue;
+  queuesManager: QueuesManager;
   currentVolume: number;
 
   currentContext: AudioContext;
@@ -48,12 +49,13 @@ class AudioPlayer {
 
   private repeatMode: 'off' | 'one' | 'all' = 'off';
   private pendingAutoPlay: boolean = false;
+  private queueEventsUnsubscribe: (() => void)[] = [];
 
-  constructor(queue: PlayerQueue) {
+  constructor(queuesManager: QueuesManager) {
     this.listeners = new Map();
 
     this.audio = new Audio();
-    this.queue = queue;
+    this.queuesManager = queuesManager;
 
     this.audio.preload = 'auto';
     this.audio.defaultPlaybackRate = 1.0;
@@ -70,37 +72,65 @@ class AudioPlayer {
     this.setupAudioEventListeners();
   }
 
+  get queue(): PlayerQueue {
+    return this.queuesManager.getActiveQueue();
+  }
+
   /**
    * Sets up integration between queue and player. Automatically loads songs when queue position
    * changes. Propagates queue events through player for convenience.
    */
   private setupQueueIntegration() {
-    // React to queue position changes - load the new song
-    this.queue.on('positionChange', () => {
+    const bindToQueue = () => {
+      this.queueEventsUnsubscribe.forEach((unsub) => unsub());
+      this.queueEventsUnsubscribe = [];
+
+      const queue = this.queue;
+
+      this.queueEventsUnsubscribe.push(
+        queue.on('positionChange', () => {
+          const songId = queue.currentSongId;
+          console.log('[AudioPlayer.positionChange]', {
+            position: queue.position,
+            songId,
+            willLoad: !!songId,
+            pendingAutoPlay: this.pendingAutoPlay
+          });
+          if (songId) {
+            this.loadSong(songId, { autoPlay: this.pendingAutoPlay }).catch((err) => {
+              console.error('[AudioPlayer.positionChange] Failed to load song:', err);
+            });
+            this.pendingAutoPlay = false; // Reset after use
+          }
+        })
+      );
+
+      this.queueEventsUnsubscribe.push(
+        queue.on('queueChange', (data) => {
+          this.emit('queueChange', data);
+        })
+      );
+
+      this.queueEventsUnsubscribe.push(
+        queue.on('metadataChange', (data) => {
+          this.emit('queueMetadataChange', data);
+        })
+      );
+    };
+
+    bindToQueue();
+
+    this.queuesManager.on('activeQueueChanged', () => {
+      bindToQueue();
       const songId = this.queue.currentSongId;
-      console.log('[AudioPlayer.positionChange]', {
-        position: this.queue.position,
-        songId,
-        willLoad: !!songId,
-        pendingAutoPlay: this.pendingAutoPlay
-      });
       if (songId) {
-        this.loadSong(songId, { autoPlay: this.pendingAutoPlay }).catch((err) => {
-          console.error('[AudioPlayer.positionChange] Failed to load song:', err);
-          // Error will be handled by error event listener
+        this.loadSong(songId, { autoPlay: true }).catch((err) => {
+          console.error('[AudioPlayer.activeQueueChanged] Failed to load song:', err);
         });
-        this.pendingAutoPlay = false; // Reset after use
+      } else {
+        this.audio.src = '';
+        this.audio.pause();
       }
-    });
-
-    // Propagate queue change events through player
-    this.queue.on('queueChange', (data) => {
-      this.emit('queueChange', data);
-    });
-
-    // Propagate metadata changes
-    this.queue.on('metadataChange', (data) => {
-      this.emit('queueMetadataChange', data);
     });
   }
 
@@ -256,7 +286,7 @@ class AudioPlayer {
   /** Cleans up resources and event listeners. Should be called when player is no longer needed. */
   destroy() {
     if (this.unsubscribeFunc) this.unsubscribeFunc.unsubscribe();
-    this.queue.removeAllListeners();
+    this.queueEventsUnsubscribe.forEach((unsub) => unsub());
     this.removeAllListeners();
     this.audio.pause();
     this.audio.src = '';

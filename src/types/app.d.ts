@@ -635,6 +635,7 @@ declare global {
   interface PlayerQueueMetadata {
     queueId?: string;
     queueType?: QueueTypes;
+    title?: string;
   }
 
   type QueueEventType =
@@ -681,10 +682,15 @@ declare global {
     metadata?: PlayerQueueMetadata;
   }
 
+  interface QueuesState {
+    queues: PlayerQueueJson[];
+    currentQueueIndex: number;
+  }
+
   interface LocalStorage {
     preferences: Preferences;
     playback: Playback;
-    queue: PlayerQueueJson;
+    queue: QueuesState;
     sortingStates: SortingStates;
     lyricsEditorSettings: LyricsEditorSettings;
     equalizerPreset: Equalizer;

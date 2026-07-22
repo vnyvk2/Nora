@@ -240,7 +240,7 @@ const Song = forwardRef((props: SongProp, ref: ForwardedRef<HTMLDivElement>) => 
         handlerFunction: () => {
           if (isMultipleSelectionsEnabled) {
             // Add multiple songs to play next (keeps duplicates)
-            addToNext(songIds, { removeDuplicates: false });
+            addToNext(songIds);
             addNewNotifications([
               {
                 id: `${title}PlayNext`,
@@ -252,7 +252,7 @@ const Song = forwardRef((props: SongProp, ref: ForwardedRef<HTMLDivElement>) => 
             ]);
           } else {
             // Add single song to play next (keeps duplicates)
-            addToNext([songId], { removeDuplicates: false });
+            addToNext([songId]);
             addNewNotifications([
               {
                 id: `${title}PlayNext`,
@@ -270,7 +270,7 @@ const Song = forwardRef((props: SongProp, ref: ForwardedRef<HTMLDivElement>) => 
         handlerFunction: () => {
           if (isMultipleSelectionsEnabled) {
             // Add multiple songs to end (keeps duplicates)
-            addToEnd(songIds, { removeDuplicates: false });
+            addToEnd(songIds);
             addNewNotifications([
               {
                 id: `${songIds.length}AddedToQueueFromMultiSelection`,
@@ -282,7 +282,7 @@ const Song = forwardRef((props: SongProp, ref: ForwardedRef<HTMLDivElement>) => 
             ]);
           } else {
             // Add single song to end (keeps duplicates)
-            addToEnd([songId], { removeDuplicates: false });
+            addToEnd([songId]);
             addNewNotifications([
               {
                 id: `${title}AddedToQueue`,
@@ -478,8 +478,8 @@ const Song = forwardRef((props: SongProp, ref: ForwardedRef<HTMLDivElement>) => 
     handlePlayBtnClick,
     toggleMultipleSelections,
     createQueue,
-    queue.position,
-    queue.songIds,
+    queue.queues[queue.currentQueueIndex].position,
+    queue.queues[queue.currentQueueIndex].songIds,
     currentSongData.songId,
     currentSongData.isAFavorite,
     updateQueueData,

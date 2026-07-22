@@ -44,7 +44,7 @@ function RouteComponent() {
   );
   const multipleSelectionsData = useStore(store, (state) => state.multipleSelectionsData);
   const queue = useStore(store, (state) => state.localStorage.queue);
-  const currentQueue = useStore(store, (state) => state.localStorage.queue.songIds);
+  const currentQueue = useStore(store, (state) => state.localStorage.queue.queues[queue.currentQueueIndex].songIds);
   const preferences = useStore(store, (state) => state.localStorage.preferences);
 
   const { updateQueueData, addNewNotifications, updateContextMenuData, toggleMultipleSelections } =
@@ -60,14 +60,14 @@ function RouteComponent() {
   // const previousQueueRef = useRef<string[]>([]);
   const { data: queueInfo } = useQuery({
     ...queueQuery.info({
-      queueType: queue.metadata?.queueType ?? 'songs',
-      id: queue.metadata?.queueId ?? ''
+      queueType: queue.queues[queue.currentQueueIndex].metadata?.queueType ?? 'songs',
+      id: queue.queues[queue.currentQueueIndex].metadata?.queueId ?? ''
     }),
     select: (data): QueueInfo | undefined => {
       if (data) {
-        if (queue.metadata?.queueType === 'songs')
+        if (queue.queues[queue.currentQueueIndex].metadata?.queueType === 'songs')
           return { artworkPath: currentSongData.artworkPath!, title: 'All Songs' };
-        if (queue.metadata?.queueType === 'folder')
+        if (queue.queues[queue.currentQueueIndex].metadata?.queueType === 'folder')
           return {
             ...data,
             title: t(data.title ? 'currentQueuePage.folderWithName' : 'common.unknownFolder', {
@@ -174,10 +174,10 @@ function RouteComponent() {
     () =>
       calculateTimeFromSeconds(
         queuedSongs
-          ?.slice(queue.position ?? 0)
+          ?.slice(queue.queues[queue.currentQueueIndex].position ?? 0)
           .reduce((prev, current) => prev + current.duration, 0)
       ).timeString,
-    [queue.position, queuedSongs]
+    [queue.queues[queue.currentQueueIndex].position, queuedSongs]
   );
 
   return (
@@ -276,9 +276,9 @@ function RouteComponent() {
               <div className="cover-img-container mr-8">
                 <Img
                   className={`h-20 w-20 rounded-md shadow-lg ${
-                    queue.metadata?.queueType === 'artist'
+                    queue.queues[queue.currentQueueIndex].metadata?.queueType === 'artist'
                       ? 'artist-img rounded-full!'
-                      : `${queue.metadata?.queueType}-img`
+                      : `${queue.queues[queue.currentQueueIndex].metadata?.queueType}-img`
                   }`}
                   src={queueInfo?.onlineArtworkPath}
                   fallbackSrc={queueInfo?.artworkPath}
@@ -288,7 +288,7 @@ function RouteComponent() {
               </div>
               <div className="queue-info">
                 <div className="queue-type text-sm font-semibold uppercase opacity-50 dark:font-medium">
-                  {queue.metadata?.queueType}
+                  {queue.queues[queue.currentQueueIndex].metadata?.queueType}
                 </div>
                 <div className="queue-title text-3xl">{queueInfo?.title}</div>
                 <div className="other-info flex text-sm font-light">
