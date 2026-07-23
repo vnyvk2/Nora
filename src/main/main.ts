@@ -260,6 +260,7 @@ const createWindow = async () => {
       addWatchersToFolders();
       addWatchersToParentFolders();
     }
+    mainWindow.show();
   });
   mainWindow.webContents.setWindowOpenHandler((data: { url: string }) => {
     shell.openExternal(data.url);
@@ -399,39 +400,54 @@ app.on('window-all-closed', () => {
 
 // / / / / / / / / / / / / / / / / / / / / / / / / / / / /
 async function manageWindowFinishLoad() {
-  const { mainWindowHeight, mainWindowWidth, mainWindowX, mainWindowY } = await getUserSettings();
+  try {
+    logger.debug('manageWindowFinishLoad called');
+    const { mainWindowHeight, mainWindowWidth, mainWindowX, mainWindowY } = await getUserSettings();
 
-  if (mainWindowX !== null && mainWindowY !== null) {
-    mainWindow.setPosition(mainWindowX, mainWindowY, true);
-  } else {
-    mainWindow.center();
-    const [x, y] = mainWindow.getPosition();
-    await saveUserSettings({ mainWindowX: x, mainWindowY: y });
+    if (mainWindowX !== null && mainWindowY !== null) {
+      mainWindow.setPosition(mainWindowX, mainWindowY, true);
+    } else {
+      mainWindow.center();
+      const [x, y] = mainWindow.getPosition();
+      await saveUserSettings({ mainWindowX: x, mainWindowY: y });
+    }
+
+    if (mainWindowWidth !== null && mainWindowHeight !== null) {
+      mainWindow.setSize(
+        mainWindowWidth || MAIN_WINDOW_DEFAULT_SIZE_X,
+        mainWindowHeight || MAIN_WINDOW_DEFAULT_SIZE_Y,
+        true
+      );
+    }
+
+    applyWindowZoomFactor(currentWindowZoomFactor, 'window-finish-load');
+
+    mainWindow.show();
+    manageWindowPositionInMonitor();
+
+    if (IS_DEVELOPMENT) mainWindow.webContents.openDevTools({ mode: 'detach', activate: true });
+
+    logger.debug(`Starting up the renderer.`);
+    
+    // DIAGNOSTIC LOOP
+    setInterval(() => {
+      logger.debug('Diagnostic interval: Testing PGlite DB connection...');
+      const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('PGlite query timed out')), 2000));
+      Promise.race([getUserSettings(), timeout])
+        .then(() => logger.debug('Diagnostic interval: DB connection is alive!'))
+        .catch(e => logger.error('Diagnostic interval: DB connection FAILED!', { error: e.message }));
+    }, 3000);
+
+    manageTaskbarPlaybackButtonControls(mainWindow, true, false);
+
+    nativeTheme.addListener('updated', () => {
+      watchForSystemThemeChanges();
+      manageTaskbarPlaybackButtonControls(mainWindow, true, isAudioPlaying);
+    });
+  } catch (error) {
+    logger.error('Error in manageWindowFinishLoad', { error });
+    mainWindow.show(); // Fallback show
   }
-
-  if (mainWindowWidth !== null && mainWindowHeight !== null) {
-    mainWindow.setSize(
-      mainWindowWidth || MAIN_WINDOW_DEFAULT_SIZE_X,
-      mainWindowHeight || MAIN_WINDOW_DEFAULT_SIZE_Y,
-      true
-    );
-  }
-
-  applyWindowZoomFactor(currentWindowZoomFactor, 'window-finish-load');
-
-  mainWindow.show();
-  manageWindowPositionInMonitor();
-
-  if (IS_DEVELOPMENT) mainWindow.webContents.openDevTools({ mode: 'detach', activate: true });
-
-  logger.debug(`Starting up the renderer.`);
-
-  manageTaskbarPlaybackButtonControls(mainWindow, true, false);
-
-  nativeTheme.addListener('updated', () => {
-    watchForSystemThemeChanges();
-    manageTaskbarPlaybackButtonControls(mainWindow, true, isAudioPlaying);
-  });
 }
 
 let asyncOperationDone = false;

@@ -62,6 +62,7 @@ export function createMockFileStats(overrides: Partial<MockFileStats> = {}) {
   return {
     birthtime: new Date('2023-01-01T00:00:00Z'),
     mtime: new Date('2023-06-15T12:30:00Z'),
+    size: 123456,
     ...overrides
   };
 }
@@ -162,6 +163,7 @@ export function createMockSongData(overrides: Partial<MockSongData> = {}): MockS
     trackNumber: undefined,
     fileCreatedAt: new Date('2023-01-01'),
     fileModifiedAt: new Date('2023-06-15'),
+    size: 123456,
     folderId: undefined,
     isFavorite: false,
     isBlacklisted: false,
@@ -233,6 +235,7 @@ export interface MockFileObject {
 export interface MockFileStats {
   birthtime: Date;
   mtime: Date;
+  size: number;
 }
 
 export interface MockSongData {
@@ -248,6 +251,7 @@ export interface MockSongData {
   trackNumber?: number;
   fileCreatedAt: Date;
   fileModifiedAt: Date;
+  size?: number;
   folderId?: number;
   isFavorite: boolean;
   isBlacklisted: boolean;

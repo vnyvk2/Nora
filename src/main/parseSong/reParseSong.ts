@@ -63,11 +63,12 @@ const reParseSong = async (filePath: string) => {
           diskNumber: metadata.disc ?? undefined,
           trackNumber: metadata.track ?? undefined,
           fileCreatedAt: stats ? stats.birthtime : new Date(),
-          fileModifiedAt: stats ? stats.mtime : new Date()
+          fileModifiedAt: stats ? stats.mtime : new Date(),
+          size: stats ? stats.size : undefined
         };
 
-        const artistsData = getArtistNamesFromSong(metadata.performers.join(', '));
-        const albumArtistsData = getArtistNamesFromSong(metadata.albumArtists.join(', '));
+        const artistsData = getArtistNamesFromSong(metadata.performers);
+        const albumArtistsData = getArtistNamesFromSong(metadata.albumArtists);
         const albumData = getAlbumInfoFromSong(metadata.album);
         const genresData = getGenreInfoFromSong(metadata.genres);
 
@@ -79,7 +80,7 @@ const reParseSong = async (filePath: string) => {
 
           // No need to delete playlists, play events, seek events, or skip events as they will be the same even after re-parsing.
 
-          updateSongByPath(songPath, updatedSong, trx);
+          await updateSongByPath(songPath, updatedSong, trx);
 
           const artworkData = await storeArtworks(
             'songs',

@@ -68,6 +68,7 @@ const audioLibraryControls = {
     sortType?: SongSortTypes
   ): Promise<SongData[]> =>
     ipcRenderer.invoke('app/addSongsFromFolderStructures', structures, sortType),
+  cancelScan: () => ipcRenderer.send('app/cancelScan'),
 
   getSong: (songId: number, updateListeningRate = true): Promise<AudioPlayerData> =>
     ipcRenderer.invoke('app/getSong', songId, updateListeningRate),

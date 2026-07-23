@@ -9,6 +9,14 @@ export const isSongWithPathAvailable = async (path: string, trx: DB | DBTransact
   return count > 0;
 };
 
+export const getSongBasicInfoByPath = async (path: string, trx: DB | DBTransaction = db) => {
+  const song = await trx.query.songs.findFirst({
+    where: eq(songs.path, path),
+    columns: { id: true, fileModifiedAt: true, size: true }
+  });
+  return song;
+};
+
 export const saveSong = async (data: typeof songs.$inferInsert, trx: DB | DBTransaction = db) => {
   const res = await trx.insert(songs).values(data).returning();
   return res[0];
@@ -46,9 +54,9 @@ export const getSongsRelativeToFolder = async (
         ? eq(musicFolders.path, folderPathOrId)
         : eq(musicFolders.id, folderPathOrId),
     columns: { id: true, isBlacklisted: true },
-    with: {
-      songs: {
-        columns: { id: true, path: true, isBlacklisted: true }
+      with: {
+        songs: {
+        columns: { id: true, path: true, isBlacklisted: true, fileModifiedAt: true, size: true }
       }
     }
   });

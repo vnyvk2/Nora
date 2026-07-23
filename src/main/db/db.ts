@@ -16,12 +16,14 @@ import { seedDatabase } from './seed';
 
 const DB_NAME = 'nora.pglite.db';
 export const DB_PATH = app.getPath('userData') + '/' + DB_NAME;
-const migrationsFolder = path.resolve(import.meta.dirname, '../../resources/drizzle/');
+const migrationsFolder = app.isPackaged
+  ? path.join(process.resourcesPath, 'app.asar.unpacked', 'resources', 'drizzle')
+  : path.join(app.getAppPath(), 'resources', 'drizzle');
 logger.debug(`Migrations folder: ${migrationsFolder}`);
 
 mkdirSync(DB_PATH, { recursive: true });
 
-const pgliteInstance = await PGlite.create(DB_PATH, { debug: 1, extensions: { pg_trgm, citext } });
+const pgliteInstance = await PGlite.create(DB_PATH, { extensions: { pg_trgm, citext } });
 pgliteInstance.onNotification((notification) => {
   logger.info('Database notification:', { notification });
 });

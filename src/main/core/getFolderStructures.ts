@@ -7,8 +7,8 @@ import logger from '../logger';
 import { showOpenDialog } from '../main';
 import getAllSettledPromises from '../utils/getAllSettledPromises';
 
-const getSongPathsInAFolder = (folderPath: string) => {
-  const allFiles = getAllFilePathsFromFolder(folderPath);
+const getSongPathsInAFolder = async (folderPath: string) => {
+  const allFiles = await getAllFilePathsFromFolder(folderPath);
 
   const allSongPaths = allFiles.filter((filePath) => {
     const fileExtension = path.extname(filePath);
@@ -31,7 +31,7 @@ export const generateFolderStructure = async (dir: string) => {
         lastParsedDate: new Date()
       },
       subFolders: [],
-      noOfSongs: getSongPathsInAFolder(dir).length
+      noOfSongs: (await getSongPathsInAFolder(dir)).length
     };
 
     const subDirs = await getDirectories(dir);

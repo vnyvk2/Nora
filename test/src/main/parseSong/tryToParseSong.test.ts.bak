@@ -49,8 +49,10 @@ vi.mock('../../../../src/main/other/generatePalette', () => ({
 }));
 
 vi.mock('../../../../src/main/db/queries/songs', () => ({
-  isSongWithPathAvailable: vi.fn(),
-  saveSong: vi.fn()
+  getSongBasicInfoByPath: vi.fn(),
+  getSongBasicInfoByPath: vi.fn(),
+  saveSong: vi.fn(),
+  removeSongById: vi.fn()
 }));
 
 vi.mock('../../../../src/main/db/queries/artworks', () => ({
@@ -95,7 +97,7 @@ describe('tryToParseSong', () => {
     // Setup default successful mocks
     const fs = await import('fs/promises');
     const taglib = await import('node-taglib-sharp');
-    const { isSongWithPathAvailable, saveSong } =
+    const { getSongBasicInfoByPath, saveSong } =
       await import('../../../../src/main/db/queries/songs');
     const { storeArtworks } = await import('../../../../src/main/other/artworks');
     const { linkArtworksToSong } = await import('../../../../src/main/db/queries/artworks');
@@ -114,7 +116,7 @@ describe('tryToParseSong', () => {
 
     vi.mocked(fs.default.stat).mockResolvedValue(createMockFileStats() as any);
     vi.mocked(taglib.File.createFromPath).mockReturnValue(createMockSongMetadata() as any);
-    vi.mocked(isSongWithPathAvailable).mockResolvedValue(false);
+    vi.mocked(getSongBasicInfoByPath).mockResolvedValue(undefined);
     vi.mocked(saveSong).mockResolvedValue(createMockSongData() as any);
     vi.mocked(storeArtworks).mockResolvedValue(createMockArtworkData() as any);
     vi.mocked(linkArtworksToSong).mockResolvedValue([] as any);
@@ -165,7 +167,7 @@ describe('tryToParseSong', () => {
       // Second call after first completes - will parse again since mock still returns false
       await tryToParseSong(songPath);
 
-      // Should parse again since isSongWithPathAvailable still returns false in mocks
+      // Should parse again since getSongBasicInfoByPath still returns false in mocks
       expect(saveSong).toHaveBeenCalledTimes(2);
     });
 
@@ -246,11 +248,11 @@ describe('tryToParseSong', () => {
     test('should retry parsing on error up to 5 times', async () => {
       vi.useFakeTimers();
       const songPath = '/test/song10.mp3';
-      const { isSongWithPathAvailable } = await import('../../../../src/main/db/queries/songs');
+      const { getSongBasicInfoByPath } = await import('../../../../src/main/db/queries/songs');
       const logger = (await import('../../../../src/main/logger')).default;
 
       // Make parsing fail
-      vi.mocked(isSongWithPathAvailable).mockRejectedValue(new Error('Read error'));
+      vi.mocked(getSongBasicInfoByPath).mockRejectedValue(new Error('Read error'));
 
       const promise = tryToParseSong(songPath);
 
@@ -279,10 +281,10 @@ describe('tryToParseSong', () => {
     test('should send PARSE_FAILED message after 5 failed retries', async () => {
       vi.useFakeTimers();
       const songPath = '/test/song11.mp3';
-      const { isSongWithPathAvailable } = await import('../../../../src/main/db/queries/songs');
+      const { getSongBasicInfoByPath } = await import('../../../../src/main/db/queries/songs');
       const { sendMessageToRenderer } = await import('../../../../src/main/main');
 
-      vi.mocked(isSongWithPathAvailable).mockRejectedValue(new Error('Read error'));
+      vi.mocked(getSongBasicInfoByPath).mockRejectedValue(new Error('Read error'));
 
       const promise = tryToParseSong(songPath);
 
@@ -305,13 +307,13 @@ describe('tryToParseSong', () => {
     test('should succeed on retry after initial failure', async () => {
       vi.useFakeTimers();
       const songPath = '/test/song12.mp3';
-      const { isSongWithPathAvailable } = await import('../../../../src/main/db/queries/songs');
+      const { getSongBasicInfoByPath } = await import('../../../../src/main/db/queries/songs');
       const { dataUpdateEvent } = await import('../../../../src/main/main');
 
       // Fail first attempt, succeed on second
-      vi.mocked(isSongWithPathAvailable)
+      vi.mocked(getSongBasicInfoByPath)
         .mockRejectedValueOnce(new Error('Read error'))
-        .mockResolvedValue(false);
+        .mockResolvedValue(undefined);
 
       const promise = tryToParseSong(songPath);
 
@@ -331,13 +333,13 @@ describe('tryToParseSong', () => {
     test('should clear previous timeout when retrying', async () => {
       vi.useFakeTimers();
       const songPath = '/test/song13.mp3';
-      const { isSongWithPathAvailable } = await import('../../../../src/main/db/queries/songs');
+      const { getSongBasicInfoByPath } = await import('../../../../src/main/db/queries/songs');
 
       // Fail twice, then succeed
-      vi.mocked(isSongWithPathAvailable)
+      vi.mocked(getSongBasicInfoByPath)
         .mockRejectedValueOnce(new Error('Error 1'))
         .mockRejectedValueOnce(new Error('Error 2'))
-        .mockResolvedValue(false);
+        .mockResolvedValue(undefined);
 
       const promise = tryToParseSong(songPath);
 
@@ -391,9 +393,9 @@ describe('tryToParseSong', () => {
     test('should remove path from queue after failed parsing', async () => {
       vi.useFakeTimers();
       const songPath = '/test/song17.mp3';
-      const { isSongWithPathAvailable } = await import('../../../../src/main/db/queries/songs');
+      const { getSongBasicInfoByPath } = await import('../../../../src/main/db/queries/songs');
 
-      vi.mocked(isSongWithPathAvailable).mockRejectedValue(new Error('Fatal error'));
+      vi.mocked(getSongBasicInfoByPath).mockRejectedValue(new Error('Fatal error'));
 
       const promise = tryToParseSong(songPath);
 
@@ -442,10 +444,10 @@ describe('tryToParseSong', () => {
 
     test('should handle reparseToSync flag', async () => {
       const songPath = '/test/song18.mp3';
-      const { isSongWithPathAvailable } = await import('../../../../src/main/db/queries/songs');
+      const { getSongBasicInfoByPath } = await import('../../../../src/main/db/queries/songs');
 
       // Song exists
-      vi.mocked(isSongWithPathAvailable).mockResolvedValue(true);
+      vi.mocked(getSongBasicInfoByPath).mockResolvedValue(createMockSongData({ fileModifiedAt: new Date('2023-06-15T12:30:00Z'), size: 123456 }) as any);
 
       // Should not parse without flag
       await tryToParseSong(songPath, undefined, false);

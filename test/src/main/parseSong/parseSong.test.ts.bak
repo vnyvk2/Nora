@@ -51,8 +51,10 @@ vi.mock('../../../../src/main/other/generatePalette', () => ({
 }));
 
 vi.mock('../../../../src/main/db/queries/songs', () => ({
-  isSongWithPathAvailable: vi.fn(),
-  saveSong: vi.fn()
+  getSongBasicInfoByPath: vi.fn(),
+  getSongBasicInfoByPath: vi.fn(),
+  saveSong: vi.fn(),
+  removeSongById: vi.fn()
 }));
 
 vi.mock('../../../../src/main/db/queries/artworks', () => ({
@@ -88,7 +90,7 @@ describe('parseSong', () => {
     // Setup default successful mocks
     const fs = await import('fs/promises');
     const taglib = await import('node-taglib-sharp');
-    const { isSongWithPathAvailable, saveSong } =
+    const { getSongBasicInfoByPath, saveSong } =
       await import('../../../../src/main/db/queries/songs');
     const { storeArtworks } = await import('../../../../src/main/other/artworks');
     const { linkArtworksToSong } = await import('../../../../src/main/db/queries/artworks');
@@ -107,7 +109,7 @@ describe('parseSong', () => {
 
     vi.mocked(fs.default.stat).mockResolvedValue(createMockFileStats() as any);
     vi.mocked(taglib.File.createFromPath).mockReturnValue(createMockSongMetadata() as any);
-    vi.mocked(isSongWithPathAvailable).mockResolvedValue(false);
+    vi.mocked(getSongBasicInfoByPath).mockResolvedValue(undefined);
     vi.mocked(saveSong).mockResolvedValue(createMockSongData() as any);
     vi.mocked(storeArtworks).mockResolvedValue(createMockArtworkData() as any);
     vi.mocked(linkArtworksToSong).mockResolvedValue([] as any);
@@ -366,7 +368,7 @@ describe('parseSong', () => {
       ).default;
       expect(manageArtistsOfParsedSong).toHaveBeenCalledWith(
         expect.objectContaining({
-          songArtists: ['Artist One', 'Artist Two', 'Artist Three']
+          songArtists: ['Artist One, Artist Two, Artist Three']
         }),
         expect.anything()
       );
@@ -388,7 +390,7 @@ describe('parseSong', () => {
       ).default;
       expect(manageArtistsOfParsedSong).toHaveBeenCalledWith(
         expect.objectContaining({
-          songArtists: ['Artist One', 'Artist Two']
+          songArtists: ['Artist One & Artist Two']
         }),
         expect.anything()
       );
@@ -516,8 +518,8 @@ describe('parseSong', () => {
   describe('Eligibility Checks', () => {
     test('should not parse if song already exists', async () => {
       const songPath = '/test/existing-song.mp3';
-      const { isSongWithPathAvailable } = await import('../../../../src/main/db/queries/songs');
-      vi.mocked(isSongWithPathAvailable).mockResolvedValue(true);
+      const { getSongBasicInfoByPath } = await import('../../../../src/main/db/queries/songs');
+      vi.mocked(getSongBasicInfoByPath).mockResolvedValue(createMockSongData({ fileModifiedAt: new Date('2023-06-15T12:30:00Z'), size: 123456 }) as any);
 
       await parseSong(songPath);
 
@@ -527,8 +529,8 @@ describe('parseSong', () => {
 
     test('should parse if song exists but reparseToSync is true', async () => {
       const songPath = '/test/reparse-song.mp3';
-      const { isSongWithPathAvailable } = await import('../../../../src/main/db/queries/songs');
-      vi.mocked(isSongWithPathAvailable).mockResolvedValue(true);
+      const { getSongBasicInfoByPath } = await import('../../../../src/main/db/queries/songs');
+      vi.mocked(getSongBasicInfoByPath).mockResolvedValue(createMockSongData({ fileModifiedAt: new Date('2023-06-15T12:30:00Z'), size: 123456 }) as any);
 
       await parseSong(songPath, undefined, true);
 
@@ -552,16 +554,17 @@ describe('parseSong', () => {
 
     test('should log when song is not eligible for parsing', async () => {
       const songPath = '/test/ineligible-song.mp3';
-      const { isSongWithPathAvailable } = await import('../../../../src/main/db/queries/songs');
-      vi.mocked(isSongWithPathAvailable).mockResolvedValue(true);
+      const { getSongBasicInfoByPath } = await import('../../../../src/main/db/queries/songs');
+      vi.mocked(getSongBasicInfoByPath).mockResolvedValue(createMockSongData({ fileModifiedAt: new Date('2023-06-15T12:30:00Z'), size: 123456 }) as any);
 
       await parseSong(songPath);
 
       const logger = (await import('../../../../src/main/logger')).default;
       expect(logger.debug).toHaveBeenCalledWith(
-        'Song not eligable for parsing.',
+        'Song not eligable for parsing (unchanged).',
         expect.objectContaining({
-          absoluteFilePath: songPath
+          absoluteFilePath: songPath,
+          reason: { isSongUnchanged: true }
         })
       );
     });

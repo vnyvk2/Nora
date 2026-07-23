@@ -9,20 +9,21 @@ import logger from '../logger';
 import { generatePalettes } from '../other/generatePalette';
 import { tryToParseSong } from '../parseSong/parseSong';
 import removeSongsFromLibrary from '../removeSongsFromLibrary';
+import mapWithConcurrency from '../utils/mapWithConcurrency';
 import { saveAbortController } from './controlAbortControllers';
 
 const abortController = new AbortController();
 saveAbortController('checkFolderForUnknownContentModifications', abortController);
+const FILE_STAT_CONCURRENCY = 16;
+type FolderSong = Awaited<ReturnType<typeof getSongsRelativeToFolder>>[number];
 
-const getSongPathsRelativeToFolder = async (folderPath: string) => {
+const getSongsInFolder = async (folderPath: string) => {
   const relevantSongs = await getSongsRelativeToFolder(folderPath, {
     skipBlacklistedFolders: true,
     skipBlacklistedSongs: true
   });
 
-  const relevantSongPaths = relevantSongs.map((song) => song.path);
-
-  return relevantSongPaths;
+  return relevantSongs;
 };
 
 const getFullPathsOfFolderDirs = async (folderPath: string) => {
@@ -50,73 +51,94 @@ const removeDeletedSongsFromLibrary = async (
   }
 };
 
-const addNewlyAddedSongsToLibrary = async (
+const getChangedSongPaths = async (songs: FolderSong[], currentSongPaths: Set<string>) => {
+  const existingSongs = songs.filter((song) => currentSongPaths.has(song.path));
+  const checkedSongPaths = await mapWithConcurrency(
+    existingSongs,
+    FILE_STAT_CONCURRENCY,
+    async (song) => {
+      try {
+        const stats = await fs.stat(song.path);
+        const hasFileChanged =
+          song.fileModifiedAt.getTime() !== stats.mtime.getTime() || song.size !== stats.size;
+
+        return hasFileChanged ? song.path : undefined;
+      } catch (error) {
+        logger.error(`Failed to check song stats for modifications.`, {
+          error,
+          songPath: song.path
+        });
+        return undefined;
+      }
+    }
+  );
+
+  return checkedSongPaths.filter((songPath) => typeof songPath === 'string');
+};
+
+const parseSongPathsInLibrary = async (
   folderPath: string,
-  newlyAddedSongPaths: string[],
+  songPaths: string[],
   abortSignal: AbortSignal
 ) => {
   const folder = await getFolderFromPath(folderPath);
 
-  for (let i = 0; i < newlyAddedSongPaths.length; i += 1) {
-    const newlyAddedSongPath = newlyAddedSongPaths[i];
+  for (let i = 0; i < songPaths.length; i += 1) {
+    const songPath = songPaths[i];
 
     if (abortSignal?.aborted) {
       logger.warn('Parsing songs in the music folder aborted by an abortController signal.', {
         reason: abortSignal?.reason,
-        newlyAddedSongPath
+        songPath
       });
       break;
     }
 
     try {
-      await tryToParseSong(newlyAddedSongPath, folder?.id, false, false);
-      logger.debug(`${path.basename(newlyAddedSongPath)} song added.`, {
-        songPath: newlyAddedSongPath
+      await tryToParseSong(songPath, folder?.id, false, false);
+      logger.debug(`${path.basename(songPath)} song checked for library updates.`, {
+        songPath
       });
     } catch (error) {
-      logger.error(`Failed to parse song added before application launch`, {
+      logger.error(`Failed to parse song during folder modification check.`, {
         error,
-        newlyAddedSongPath
+        songPath
       });
     }
   }
-  if (newlyAddedSongPaths.length > 0) setTimeout(generatePalettes, 1500);
+  if (songPaths.length > 0) setTimeout(generatePalettes, 1500);
 };
 
 const checkFolderForUnknownModifications = async (folderPath: string) => {
-  const relevantFolderSongPaths = await getSongPathsRelativeToFolder(folderPath);
+  const relevantFolderSongs = await getSongsInFolder(folderPath);
+  const relevantFolderSongPaths = relevantFolderSongs.map((song) => song.path);
+  const dirs = await getFullPathsOfFolderDirs(folderPath);
 
-  if (relevantFolderSongPaths.length > 0) {
-    const dirs = await getFullPathsOfFolderDirs(folderPath);
+  if (dirs) {
+    const currentSongPaths = new Set(dirs);
+    const savedSongPaths = new Set(relevantFolderSongPaths);
+    const newlyAddedSongPaths = dirs.filter((dir) => !savedSongPaths.has(dir));
+    const deletedSongPaths = relevantFolderSongPaths.filter((songPath) => !currentSongPaths.has(songPath));
+    const changedSongPaths = await getChangedSongPaths(relevantFolderSongs, currentSongPaths);
 
-    if (dirs) {
-      // checks for newly added songs that got added before application launch
-      const newlyAddedSongPaths = dirs.filter(
-        (dir) => !relevantFolderSongPaths.some((songPath) => songPath === dir)
-      );
-      // checks for deleted songs that got deleted before application launch
-      const deletedSongPaths = relevantFolderSongPaths.filter(
-        (songPath) => !dirs.some((dir) => dir === songPath)
-      );
+    logger.debug(`Song additions/deletions/modifications detected.`, {
+      newlyAddedSongPathsCount: newlyAddedSongPaths.length,
+      deletedSongPathsCount: deletedSongPaths.length,
+      changedSongPathsCount: changedSongPaths.length,
+      newlyAddedSongPaths,
+      deletedSongPaths,
+      changedSongPaths,
+      folderPath
+    });
 
-      logger.debug(`New song additions/deletions detected.`, {
-        newlyAddedSongPathsCount: newlyAddedSongPaths.length,
-        deletedSongPathsCount: deletedSongPaths.length,
-        newlyAddedSongPaths,
-        deletedSongPaths,
-        folderPath
-      });
+    // Prioritises deleting songs before adding or reparsing songs to prevent data clashes.
+    if (deletedSongPaths.length > 0) {
+      await removeDeletedSongsFromLibrary(deletedSongPaths, abortController.signal);
+    }
 
-      // Prioritises deleting songs before adding new songs to prevent data clashes.
-      if (deletedSongPaths.length > 0) {
-        // deleting songs from the library that got deleted before application launch
-        await removeDeletedSongsFromLibrary(deletedSongPaths, abortController.signal);
-      }
-
-      if (newlyAddedSongPaths.length > 0) {
-        // parses new songs that added before application launch
-        await addNewlyAddedSongsToLibrary(folderPath, newlyAddedSongPaths, abortController.signal);
-      }
+    const parsableSongPaths = [...newlyAddedSongPaths, ...changedSongPaths];
+    if (parsableSongPaths.length > 0) {
+      await parseSongPathsInLibrary(folderPath, parsableSongPaths, abortController.signal);
     }
   }
 };

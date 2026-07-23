@@ -146,6 +146,7 @@ export const songs = pgTable(
       .defaultNow(),
     fileCreatedAt: timestamp('file_created_at', { withTimezone: false }).notNull(),
     fileModifiedAt: timestamp('file_modified_at', { withTimezone: false }).notNull(),
+    size: integer('size'),
     createdAt: timestamp('created_at', { withTimezone: false }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: false }).notNull().defaultNow()
   },

@@ -28,7 +28,7 @@ export const getFolderStructure = async (
   const result: FolderStructure[] = [];
 
   for (const folder of folders) {
-    const subFolders = await getFolderStructure(folder.id);
+    const subFolders = await getFolderStructure(folder.id, trx);
 
     result.push({
       path: folder.path,
@@ -154,7 +154,7 @@ const getMusicFolder = async (
   const result: MusicFolder[] = [];
 
   for (const folder of folders) {
-    const subFolders = await getMusicFolder(folder.id);
+    const subFolders = await getMusicFolder(folder.id, trx);
 
     result.push({
       path: folder.path,

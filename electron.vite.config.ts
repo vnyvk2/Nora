@@ -10,7 +10,13 @@ export default defineConfig({
     build: {
       sourcemap: true,
       minify: false,
-      rollupOptions: { input: '/src/main/main.ts', external: ['sharp'] }
+      rollupOptions: { 
+        input: {
+          main: '/src/main/main.ts',
+          'metadataParser.worker': '/src/main/workers/metadataParser.worker.ts'
+        }, 
+        external: ['sharp'] 
+      }
     },
     resolve: {
       alias: {

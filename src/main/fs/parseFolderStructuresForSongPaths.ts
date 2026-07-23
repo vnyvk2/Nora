@@ -1,4 +1,4 @@
-import fsSync from 'fs';
+import fs from 'fs/promises';
 import path from 'path';
 
 import { db } from '@main/db/db';
@@ -7,8 +7,11 @@ import { getAllFolderStructures, saveAllFolderStructures } from '@main/db/querie
 import { supportedMusicExtensions } from '../filesystem';
 import logger from '../logger';
 import { sendMessageToRenderer } from '../main';
+import mapWithConcurrency from '../utils/mapWithConcurrency';
 import addWatchersToFolders from './addWatchersToFolders';
 import { closeAbortController } from './controlAbortControllers';
+
+const FOLDER_READ_CONCURRENCY = 16;
 
 export const getAllFoldersFromFolderStructures = (folderStructures: FolderStructure[]) => {
   const folderData: MusicFolderData[] = [];
@@ -26,9 +29,9 @@ export const getAllFoldersFromFolderStructures = (folderStructures: FolderStruct
   return folderData;
 };
 
-export const getAllFilePathsFromFolder = (folderPath: string) => {
+export const getAllFilePathsFromFolder = async (folderPath: string) => {
   try {
-    const baseNames = fsSync.readdirSync(folderPath);
+    const baseNames = await fs.readdir(folderPath);
     const filePaths = baseNames
       .filter((baseName) => path.extname(baseName))
       .map((baseName) => path.join(folderPath, baseName));
@@ -40,9 +43,13 @@ export const getAllFilePathsFromFolder = (folderPath: string) => {
   }
 };
 
-export const getAllFilesFromFolderStructures = (folderStructures: FolderStructure[]) => {
+export const getAllFilesFromFolderStructures = async (folderStructures: FolderStructure[]) => {
   const allFolders = getAllFoldersFromFolderStructures(folderStructures);
-  const allFiles = allFolders.map((folder) => getAllFilePathsFromFolder(folder.path)).flat();
+  const allFiles = (
+    await mapWithConcurrency(allFolders, FOLDER_READ_CONCURRENCY, (folder) =>
+      getAllFilePathsFromFolder(folder.path)
+    )
+  ).flat();
 
   return allFiles;
 };
@@ -154,11 +161,15 @@ const parseFolderStructuresForSongPaths = async (folderStructures: FolderStructu
     selectedPaths.has(f.path)
   );
 
-  const allFilesData = relevantFolders
-    .map((folder) =>
-      getAllFilePathsFromFolder(folder.path).map((songPath) => ({ songPath, folder }))
-    )
-    .flat();
+  const allFilesDataNested = await mapWithConcurrency(
+    relevantFolders,
+    FOLDER_READ_CONCURRENCY,
+    async (folder) => {
+      const paths = await getAllFilePathsFromFolder(folder.path);
+      return paths.map((songPath) => ({ songPath, folder }));
+    }
+  );
+  const allFilesData = allFilesDataNested.flat();
   const allSongPaths = allFilesData.filter((file) => {
     const fileExtension = path.extname(file.songPath);
     return supportedMusicExtensions.includes(fileExtension);

@@ -26,8 +26,8 @@ const checkForFolderUpdates = async (folder: FolderStructure) => {
 
       folder.stats.lastModifiedDate = folderStats.mtime;
 
-      saveFolderStructures([folder]);
-      checkFolderForUnknownModifications(folder.path);
+      await saveFolderStructures([folder]);
+      await checkFolderForUnknownModifications(folder.path);
     } else
       logger.debug(`'${path.basename(folder.path)}' folder has no modifications.`, {
         path: folder.path
@@ -48,13 +48,12 @@ const folderWatcherFunction = async (
 ) => {
   // consolelogger.debug(`folder event - '${eventType}' - ${filename}`);
   if (filename) {
-    if (eventType === 'rename') {
+    if (eventType === 'rename' || eventType === 'change') {
       const doesFilenameHasSongExtension = supportedMusicExtensions.includes(
         path.extname(filename)
       );
 
       if (doesFilenameHasSongExtension) {
-        // possible new song addition
         await checkFolderForContentModifications(folder.path, filename, abortSignal);
       }
     }

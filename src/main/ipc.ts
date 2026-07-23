@@ -166,6 +166,13 @@ export function initializeIPC(mainWindow: BrowserWindow, abortSignal: AbortSigna
       addSongsFromFolderStructures(structures)
     );
 
+    ipcMain.on('app/cancelScan', async () => {
+      const { setScanState, getScanState } = await import('./fs/scanState');
+      if (getScanState() === 'SCANNING') {
+        setScanState('CANCELLING');
+      }
+    });
+
     ipcMain.handle('app/getSong', (_, id: number) => sendAudioData(id));
 
     ipcMain.handle('app/getSongFromUnknownSource', (_, songPath: string) =>

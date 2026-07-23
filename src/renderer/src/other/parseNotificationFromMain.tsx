@@ -199,6 +199,65 @@ const notificationsFromMainConfig: AppNotificationConfig[] = [
     }
   },
   {
+    trigger: ['SCAN_PROCESS_UPDATE', 'SCAN_PROCESS_COMPLETE'],
+    duration: 1000000, // keep alive until completed/cancelled
+    iconClassName: 'material-icons-round-outlined',
+    type: 'WITH_PROGRESS_BAR',
+    validate({ data }) {
+      if (data) return 'status' in data;
+      return false;
+    },
+    update({ data, messageCode }) {
+      const status = data?.status as string;
+      
+      this.id = 'SCANNER_NOTIFICATION'; // Ensure it updates the same notification
+      
+      if (messageCode === 'SCAN_PROCESS_COMPLETE') {
+        this.duration = 3000;
+        this.iconName = status === 'CANCELLED' ? 'cancel' : 'done';
+        this.content = status === 'CANCELLED' ? 'Scan Cancelled' : 'Scan Complete';
+        this.progressBarData = undefined;
+        this.buttons = [];
+      } else {
+        this.iconName = 'sync';
+        this.iconClassName = 'material-icons-round-outlined animate-spin-ease';
+        
+        if (data && 'total' in data && 'value' in data) {
+          this.progressBarData = {
+            total: (data.total as number) || 0,
+            value: (data.value as number) || 0
+          };
+        } else {
+          this.progressBarData = undefined;
+        }
+
+        if (status === 'SCAN_STARTED' || status === 'PARSING_METADATA') {
+          if (status === 'SCAN_STARTED') {
+             this.content = 'Scanning Library: Discovering files...';
+          } else if (data && 'total' in data && 'value' in data) {
+             const currentPath = data.currentPath ? `\nCurrent: ${data.currentPath.toString().split(/[/\\]/).pop()}` : '';
+             this.content = `Parsing metadata... ${data.value} / ${data.total}${currentPath}`;
+          }
+
+          this.buttons = [
+            {
+              label: 'Cancel',
+              iconName: 'cancel',
+              clickHandler: () => {
+                window.api.audioLibraryControls.cancelScan();
+                // We don't remove it immediately, we let the backend send SCAN_PROCESS_COMPLETE or we can optimistically update it
+              }
+            }
+          ];
+        } else {
+          this.buttons = [];
+        }
+      }
+
+      return this;
+    }
+  },
+  {
     trigger: ['APPDATA_EXPORT_STARTED'],
     iconName: 'publish',
     duration: 10000,

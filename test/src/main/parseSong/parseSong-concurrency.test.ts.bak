@@ -48,8 +48,10 @@ vi.mock('../../../../src/main/other/generatePalette', () => ({
 }));
 
 vi.mock('../../../../src/main/db/queries/songs', () => ({
-  isSongWithPathAvailable: vi.fn(),
-  saveSong: vi.fn()
+  getSongBasicInfoByPath: vi.fn(),
+  getSongBasicInfoByPath: vi.fn(),
+  saveSong: vi.fn(),
+  removeSongById: vi.fn()
 }));
 
 vi.mock('../../../../src/main/db/queries/artworks', () => ({
@@ -85,7 +87,7 @@ describe('parseSong Concurrency and State Management', () => {
     // Setup default successful mocks
     const fs = await import('fs/promises');
     const taglib = await import('node-taglib-sharp');
-    const { isSongWithPathAvailable, saveSong } =
+    const { getSongBasicInfoByPath, saveSong } =
       await import('../../../../src/main/db/queries/songs');
     const { storeArtworks } = await import('../../../../src/main/other/artworks');
     const { linkArtworksToSong } = await import('../../../../src/main/db/queries/artworks');
@@ -104,7 +106,7 @@ describe('parseSong Concurrency and State Management', () => {
 
     vi.mocked(fs.default.stat).mockResolvedValue(createMockFileStats() as any);
     vi.mocked(taglib.File.createFromPath).mockReturnValue(createMockSongMetadata() as any);
-    vi.mocked(isSongWithPathAvailable).mockResolvedValue(false);
+    vi.mocked(getSongBasicInfoByPath).mockResolvedValue(undefined);
     vi.mocked(saveSong).mockResolvedValue(createMockSongData() as any);
     vi.mocked(storeArtworks).mockResolvedValue(createMockArtworkData() as any);
     vi.mocked(linkArtworksToSong).mockResolvedValue([] as any);
@@ -153,8 +155,8 @@ describe('parseSong Concurrency and State Management', () => {
 
       // Note: saveSong won't be called second time because song exists
       // but the attempt should not be blocked by pathsQueue
-      const { isSongWithPathAvailable } = await import('../../../../src/main/db/queries/songs');
-      expect(isSongWithPathAvailable).toHaveBeenCalled();
+      const { getSongBasicInfoByPath } = await import('../../../../src/main/db/queries/songs');
+      expect(getSongBasicInfoByPath).toHaveBeenCalled();
     });
 
     test('should handle multiple different paths concurrently', async () => {
@@ -191,10 +193,10 @@ describe('parseSong Concurrency and State Management', () => {
     test('should clean up pathsQueue on failed parse', async () => {
       vi.useFakeTimers();
       const songPath = '/concurrent/cleanup-failure.mp3';
-      const { isSongWithPathAvailable } = await import('../../../../src/main/db/queries/songs');
+      const { getSongBasicInfoByPath } = await import('../../../../src/main/db/queries/songs');
 
       // Make parsing fail permanently
-      vi.mocked(isSongWithPathAvailable).mockRejectedValue(new Error('Fatal'));
+      vi.mocked(getSongBasicInfoByPath).mockRejectedValue(new Error('Fatal'));
 
       const promise = tryToParseSong(songPath);
 
@@ -208,7 +210,7 @@ describe('parseSong Concurrency and State Management', () => {
       }
 
       // Reset mock for second attempt
-      vi.mocked(isSongWithPathAvailable).mockResolvedValue(false);
+      vi.mocked(getSongBasicInfoByPath).mockResolvedValue(undefined);
 
       // Try parsing same path again - should not be blocked
       const secondAttempt = tryToParseSong(songPath);
@@ -292,7 +294,7 @@ describe('parseSong Concurrency and State Management', () => {
 
     test('should allow parsing after parseQueue cleanup', async () => {
       const songPath = '/parsequeue/song3.mp3';
-      const { saveSong, isSongWithPathAvailable } =
+      const { saveSong, getSongBasicInfoByPath } =
         await import('../../../../src/main/db/queries/songs');
 
       // First parse
@@ -300,7 +302,7 @@ describe('parseSong Concurrency and State Management', () => {
       expect(saveSong).toHaveBeenCalledTimes(1);
 
       // Mark song as existing for second parse attempt
-      vi.mocked(isSongWithPathAvailable).mockResolvedValue(true);
+      vi.mocked(getSongBasicInfoByPath).mockResolvedValue(createMockSongData({ fileModifiedAt: new Date('2023-06-15T12:30:00Z'), size: 123456 }) as any);
 
       // Second parse should be allowed (parseQueue cleaned up)
       await parseSong(songPath);
@@ -329,12 +331,12 @@ describe('parseSong Concurrency and State Management', () => {
 
     test('should handle race condition at eligibility check', async () => {
       const songPath = '/parsequeue/race-condition.mp3';
-      const { isSongWithPathAvailable, saveSong } =
+      const { getSongBasicInfoByPath, saveSong } =
         await import('../../../../src/main/db/queries/songs');
 
       // Both calls pass eligibility check initially
       let callCount = 0;
-      vi.mocked(isSongWithPathAvailable).mockImplementation(() => {
+      vi.mocked(getSongBasicInfoByPath).mockImplementation(() => {
         callCount++;
         return Promise.resolve(false);
       });
@@ -364,11 +366,11 @@ describe('parseSong Concurrency and State Management', () => {
   describe('reparseToSync Flag Behavior', () => {
     test('should bypass existing song check when reparseToSync is true', async () => {
       const songPath = '/reparse/song1.mp3';
-      const { isSongWithPathAvailable, saveSong } =
+      const { getSongBasicInfoByPath, saveSong } =
         await import('../../../../src/main/db/queries/songs');
 
       // Song already exists
-      vi.mocked(isSongWithPathAvailable).mockResolvedValue(true);
+      vi.mocked(getSongBasicInfoByPath).mockResolvedValue(createMockSongData({ fileModifiedAt: new Date('2023-06-15T12:30:00Z'), size: 123456 }) as any);
 
       // Parse with reparseToSync = false (default)
       await parseSong(songPath, undefined, false);
@@ -381,10 +383,10 @@ describe('parseSong Concurrency and State Management', () => {
 
     test('should reparse existing song metadata', async () => {
       const songPath = '/reparse/song2.mp3';
-      const { isSongWithPathAvailable, saveSong } =
+      const { getSongBasicInfoByPath, saveSong } =
         await import('../../../../src/main/db/queries/songs');
 
-      vi.mocked(isSongWithPathAvailable).mockResolvedValue(true);
+      vi.mocked(getSongBasicInfoByPath).mockResolvedValue(createMockSongData({ fileModifiedAt: new Date('2023-06-15T12:30:00Z'), size: 123456 }) as any);
 
       // Updated metadata
       const taglib = await import('node-taglib-sharp');
@@ -408,10 +410,10 @@ describe('parseSong Concurrency and State Management', () => {
 
     test('should respect parseQueue even with reparseToSync', async () => {
       const songPath = '/reparse/song3.mp3';
-      const { isSongWithPathAvailable, saveSong } =
+      const { getSongBasicInfoByPath, saveSong } =
         await import('../../../../src/main/db/queries/songs');
 
-      vi.mocked(isSongWithPathAvailable).mockResolvedValue(true);
+      vi.mocked(getSongBasicInfoByPath).mockResolvedValue(createMockSongData({ fileModifiedAt: new Date('2023-06-15T12:30:00Z'), size: 123456 }) as any);
 
       // Control saveSong timing
       let resolveFirst: any;
@@ -500,8 +502,8 @@ describe('parseSong Concurrency and State Management', () => {
       await parseSong(songPath);
 
       // Should attempt to parse (not blocked by previous test's parseQueue)
-      const { isSongWithPathAvailable } = await import('../../../../src/main/db/queries/songs');
-      expect(isSongWithPathAvailable).toHaveBeenCalled();
+      const { getSongBasicInfoByPath } = await import('../../../../src/main/db/queries/songs');
+      expect(getSongBasicInfoByPath).toHaveBeenCalled();
     });
   });
 
