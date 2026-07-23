@@ -14,9 +14,10 @@ import useSelectAllHandler from '@renderer/hooks/useSelectAllHandler';
 import { queryClient } from '@renderer/index';
 import { queueQuery } from '@renderer/queries/queue';
 import { songQuery } from '@renderer/queries/songs';
-import { store } from '@renderer/store/store';
+import { store, dispatch } from '@renderer/store/store';
 import calculateTimeFromSeconds from '@renderer/utils/calculateTimeFromSeconds';
 import { baseInfoPageSearchParamsSchema } from '@renderer/utils/zod/baseInfoPageSearchParamsSchema';
+import { getQueuesManager } from '@renderer/other/queuesManager';
 import { useQuery } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
 import { useStore } from '@tanstack/react-store';
@@ -45,10 +46,24 @@ function RouteComponent() {
   );
   const multipleSelectionsData = useStore(store, (state) => state.multipleSelectionsData);
   const queue = useStore(store, (state) => state.localStorage.queue);
-  const currentQueue = useStore(store, (state) => state.localStorage.queue.queues[queue.currentQueueIndex].songIds);
   const preferences = useStore(store, (state) => state.localStorage.preferences);
+  const manager = getQueuesManager();
 
-  const { updateQueueData, addNewNotifications, updateContextMenuData, toggleMultipleSelections } =
+  const [viewingQueueIndex, setViewingQueueIndex] = useState(queue.currentQueueIndex);
+
+  // Sync viewingQueueIndex if active queue is deleted or changed externally
+  useEffect(() => {
+    if (viewingQueueIndex >= queue.queues.length) {
+      setViewingQueueIndex(queue.queues.length - 1);
+    }
+  }, [queue.queues.length, viewingQueueIndex]);
+
+  const currentQueue = useStore(
+    store, 
+    (state) => state.localStorage.queue.queues[viewingQueueIndex]?.songIds || []
+  );
+
+  const { addNewNotifications, updateContextMenuData, toggleMultipleSelections } =
     useContext(AppUpdateContext);
   const { t } = useTranslation();
   const { scrollTopOffset } = Route.useSearch();
@@ -58,17 +73,16 @@ function RouteComponent() {
     enabled: currentQueue.length > 0
   });
 
-  // const previousQueueRef = useRef<string[]>([]);
   const { data: queueInfo } = useQuery({
     ...queueQuery.info({
-      queueType: queue.queues[queue.currentQueueIndex].metadata?.queueType ?? 'songs',
-      id: queue.queues[queue.currentQueueIndex].metadata?.queueId ?? ''
+      queueType: queue.queues[viewingQueueIndex]?.metadata?.queueType ?? 'songs',
+      id: queue.queues[viewingQueueIndex]?.metadata?.queueId ?? ''
     }),
     select: (data): QueueInfo | undefined => {
       if (data) {
-        if (queue.queues[queue.currentQueueIndex].metadata?.queueType === 'songs')
+        if (queue.queues[viewingQueueIndex]?.metadata?.queueType === 'songs')
           return { artworkPath: currentSongData.artworkPath!, title: 'All Songs' };
-        if (queue.queues[queue.currentQueueIndex].metadata?.queueType === 'folder')
+        if (queue.queues[viewingQueueIndex]?.metadata?.queueType === 'folder')
           return {
             ...data,
             title: t(data.title ? 'currentQueuePage.folderWithName' : 'common.unknownFolder', {
@@ -135,8 +149,9 @@ function RouteComponent() {
     const [item] = updatedQueue.splice(result.source.index, 1);
     updatedQueue.splice(result.destination.index, 0, item);
 
-    // Single call to updateQueueData
-    updateQueueData(undefined, updatedQueue, undefined, false, true);
+    // Update the currently viewed queue
+    manager.queues[viewingQueueIndex].replaceQueue(updatedQueue, manager.queues[viewingQueueIndex].position, false);
+    dispatch({ type: 'UPDATE_QUEUE', data: { queues: manager.queues.map(q => q.toJSON()), currentQueueIndex: manager.activeQueueIndex } });
     return undefined;
   };
 
@@ -194,7 +209,7 @@ function RouteComponent() {
     >
       {queueInfo && (
         <>
-          <QueueTabs />
+          <QueueTabs viewingQueueIndex={viewingQueueIndex} setViewingQueueIndex={setViewingQueueIndex} />
           <div className="title-container text-font-color-highlight dark:text-dark-font-color-highlight mt-2 mb-4 flex items-center justify-between pr-4 text-3xl font-medium">
             {t('currentQueuePage.queue')}
             <div className="other-controls-container float-right flex">
@@ -240,8 +255,9 @@ function RouteComponent() {
                 tooltipLabel={t('currentQueuePage.shuffleQueue')}
                 isDisabled={currentQueue.length > 0 === false}
                 clickHandler={() => {
-                  updateQueueData(undefined, currentQueue, true);
-                  queryClient.invalidateQueries(songQuery.queue(currentQueue));
+                  manager.queues[viewingQueueIndex].shuffle();
+                  dispatch({ type: 'UPDATE_QUEUE', data: { queues: manager.queues.map(q => q.toJSON()), currentQueueIndex: manager.activeQueueIndex } });
+                  queryClient.invalidateQueries(songQuery.queue(manager.queues[viewingQueueIndex].songIds));
 
                   addNewNotifications([
                     {
@@ -260,18 +276,30 @@ function RouteComponent() {
                 iconName="clear"
                 isDisabled={currentQueue.length > 0 === false}
                 clickHandler={() => {
-                  updateQueueData(undefined, []);
+                  manager.queues[viewingQueueIndex].clear();
+                  dispatch({ type: 'UPDATE_QUEUE', data: { queues: manager.queues.map(q => q.toJSON()), currentQueueIndex: manager.activeQueueIndex } });
                   addNewNotifications([
                     {
                       id: 'clearQueue',
                       duration: 5000,
                       content: t('currentQueuePage.queueCleared'),
-                      iconName: 'check'
+                      iconName: 'clear'
                     }
                   ]);
                 }}
               />
             </div>
+            {viewingQueueIndex !== manager.activeQueueIndex && (
+              <Button
+                className="ml-4 bg-background-color-3 dark:bg-dark-background-color-3 text-font-color-black dark:text-font-color-white px-4 py-2 rounded-full font-semibold transition-transform hover:scale-105"
+                iconName="play_arrow"
+                label={t('common.play', 'Play')}
+                clickHandler={() => {
+                  manager.switchQueue(viewingQueueIndex);
+                  manager.getActiveQueue().moveToStart();
+                }}
+              />
+            )}
           </div>
           {currentQueue.length > 0 && (
             <div className="queue-info-container text-font-color-black dark:text-font-color-white mb-6 ml-8 flex items-center">
@@ -385,21 +413,30 @@ function RouteComponent() {
                                   {...song}
                                   trackNo={undefined}
                                   selectAllHandler={selectAllHandler}
-                                  // no need for onPlayClick because the component is in the currentQueuePage
-                                  // onPlayClick={handleSongPlayBtnClick}
+                                  onPlayClick={(_songId) => {
+                                    const queueToPlay = manager.queues[viewingQueueIndex];
+                                    if (queueToPlay) {
+                                      // First update position silently or with event
+                                      queueToPlay.moveToPosition(index);
+                                      
+                                      if (viewingQueueIndex !== manager.activeQueueIndex) {
+                                        // Switching queue will trigger autoPlay with the new position
+                                        manager.switchQueue(viewingQueueIndex);
+                                      }
+                                    }
+                                  }}
                                   additionalContextMenuItems={[
                                     {
                                       label: t('common.removeFromQueue'),
                                       iconName: 'remove_circle_outline',
                                       handlerFunction: () => {
-                                        updateQueueData(
-                                          undefined,
-                                          currentQueue.filter((id) =>
-                                            isMultipleSelectionsEnabled
-                                              ? !songIds.includes(id)
-                                              : id !== song.songId
-                                          )
+                                        const updatedQueue = currentQueue.filter((id) =>
+                                          isMultipleSelectionsEnabled
+                                            ? !songIds.includes(id)
+                                            : id !== song.songId
                                         );
+                                        manager.queues[viewingQueueIndex].replaceQueue(updatedQueue, manager.queues[viewingQueueIndex].position, false);
+                                        dispatch({ type: 'UPDATE_QUEUE', data: { queues: manager.queues.map(q => q.toJSON()), currentQueueIndex: manager.activeQueueIndex } });
                                         toggleMultipleSelections(false);
                                       }
                                     }

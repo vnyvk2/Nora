@@ -7,7 +7,12 @@ import { AppUpdateContext } from '../contexts/AppUpdateContext';
 import { store, dispatch } from '../store/store';
 import { getQueuesManager } from '../other/queuesManager';
 
-export default function QueueTabs() {
+interface QueueTabsProps {
+  viewingQueueIndex: number;
+  setViewingQueueIndex: (index) => void;
+}
+
+export default function QueueTabs({ viewingQueueIndex, setViewingQueueIndex }: QueueTabsProps) {
   const { t } = useTranslation();
   const queueState = useStore(store, (state) => state.localStorage.queue);
   const manager = getQueuesManager();
@@ -16,15 +21,15 @@ export default function QueueTabs() {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const handleSwitchQueue = useCallback((index: number) => {
-    if (manager && index !== queueState.currentQueueIndex) {
-      manager.switchQueue(index);
+    if (manager && index >= 0 && index < manager.queues.length) {
+      setViewingQueueIndex(index);
     }
-  }, [manager, queueState.currentQueueIndex]);
+  }, [manager, setViewingQueueIndex]);
 
   const handleCreateNewQueue = useCallback(() => {
     if (manager) {
       manager.createQueue();
-      manager.switchQueue(manager.queues.length - 1);
+      setViewingQueueIndex(manager.queues.length - 1);
       addNewNotifications([{
         id: `new-queue-${Date.now()}`,
         content: t('currentQueuePage.newQueueCreated', 'New queue created'),
@@ -37,11 +42,16 @@ export default function QueueTabs() {
         }
       }, 100);
     }
-  }, [manager, addNewNotifications, t]);
+  }, [manager, setViewingQueueIndex, addNewNotifications, t]);
 
   const handleDeleteQueue = useCallback((index: number) => {
     if (manager && manager.queues.length > 1) {
       manager.deleteQueue(index);
+      if (viewingQueueIndex === index) {
+        setViewingQueueIndex(Math.max(0, index - 1));
+      } else if (viewingQueueIndex > index) {
+        setViewingQueueIndex(viewingQueueIndex - 1);
+      }
       addNewNotifications([{
         id: `delete-queue-${Date.now()}`,
         content: t('currentQueuePage.queueDeleted', 'Queue deleted'),
@@ -54,7 +64,7 @@ export default function QueueTabs() {
         iconName: 'error'
       }]);
     }
-  }, [manager, addNewNotifications, t]);
+  }, [manager, viewingQueueIndex, setViewingQueueIndex, addNewNotifications, t]);
 
   return (
     <div className="queue-tabs-container relative flex items-center w-full my-4 mb-8 bg-background-color-2/50 dark:bg-dark-background-color-2/50 rounded-full p-1 shadow-inner overflow-hidden">
