@@ -92,6 +92,11 @@ function RouteComponent() {
               name: data.title
             })
           };
+        if (queue.queues[viewingQueueIndex]?.metadata?.queueType === undefined)
+          return {
+            artworkPath: '',
+            title: queue.queues[viewingQueueIndex]?.metadata?.title || `Queue ${viewingQueueIndex + 1}`
+          };
         return data;
       }
       return undefined;
@@ -293,7 +298,7 @@ function RouteComponent() {
                 className="add-songs-button text-sm"
                 iconName="add"
                 clickHandler={() => {
-                  navigate({ to: '/main-player/songs' });
+                  navigate({ to: '/main-player/songs', search: { action: 'add-to-queue', queueIndex: viewingQueueIndex } });
                 }}
               />
               <Button

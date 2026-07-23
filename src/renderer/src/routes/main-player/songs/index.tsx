@@ -10,7 +10,8 @@ import { AppUpdateContext } from '@renderer/contexts/AppUpdateContext';
 import useSelectAllHandler from '@renderer/hooks/useSelectAllHandler';
 import { queryClient } from '@renderer/index';
 import { songQuery } from '@renderer/queries/songs';
-import { store } from '@renderer/store/store';
+import { store, dispatch } from '@renderer/store/store';
+import { getQueuesManager } from '@renderer/other/queuesManager';
 import storage from '@renderer/utils/localStorage';
 import { songSearchSchema } from '@renderer/utils/zod/songSchema';
 import { useSuspenseQuery } from '@tanstack/react-query';
@@ -68,7 +69,9 @@ function SongsPage() {
   const {
     scrollTopOffset,
     sortingOrder = songsPageSortingState || 'aToZ',
-    filteringOrder = 'notSelected'
+    filteringOrder = 'notSelected',
+    action,
+    queueIndex
   } = Route.useSearch();
   const navigate = useNavigate({ from: Route.fullPath });
 
@@ -81,6 +84,24 @@ function SongsPage() {
   useEffect(() => {
     storage.sortingStates.setSortingStates('songsPage', sortingOrder);
   }, [sortingOrder]);
+
+  useEffect(() => {
+    if (action === 'add-to-queue' && !isMultipleSelectionEnabled) {
+      toggleMultipleSelections(true, 'songs');
+    }
+  }, [action, isMultipleSelectionEnabled, toggleMultipleSelections]);
+
+  useEffect(() => {
+    return () => {
+      setTimeout(() => {
+        const url = new URL(window.location.href);
+        const newAction = url.searchParams.get('action');
+        if (newAction !== 'add-to-queue') {
+          toggleMultipleSelections(false, 'songs');
+        }
+      }, 50);
+    };
+  }, [toggleMultipleSelections]);
 
   const addNewSongs = useCallback(() => {
     changePromptMenuData(
@@ -195,6 +216,48 @@ function SongsPage() {
           </div>
         </div>
         <div className="other-controls-container flex">
+          {action === 'add-to-queue' && (
+            <>
+              <Button
+                key="add-to-queue-btn"
+                className="add-to-queue-btn text-sm md:text-lg bg-background-color-3 dark:bg-dark-background-color-3 px-4 py-1 rounded-full font-semibold mr-2 flex items-center shadow-sm"
+                iconName="add"
+                label={t('currentQueuePage.addSongs', 'Add to Queue')}
+                isDisabled={multipleSelectionsData.multipleSelections.length === 0}
+                clickHandler={() => {
+                  const manager = getQueuesManager();
+                  const targetQueueIndex = queueIndex ?? manager.activeQueueIndex;
+                  const targetQueue = manager.queues[targetQueueIndex];
+                  if (targetQueue) {
+                    targetQueue.addSongIdsToEnd(multipleSelectionsData.multipleSelections as number[]);
+                    dispatch({ type: 'UPDATE_QUEUE', data: { queues: manager.queues.map(q => q.toJSON()), currentQueueIndex: manager.activeQueueIndex } });
+                    
+                    toggleMultipleSelections(false, 'songs');
+                    navigate({ search: (prev) => ({ ...prev, action: undefined, queueIndex: undefined }) });
+                  }
+                }}
+              />
+              <Button
+                key="search-btn"
+                className="search-btn text-sm md:text-lg mr-2"
+                iconName="search"
+                tooltipLabel={t('sideBar.search')}
+                clickHandler={() => {
+                  navigate({ to: '/main-player/search', search: { action: 'add-to-queue', queueIndex: queueIndex } });
+                }}
+              />
+              <Button
+                key="cancel-btn"
+                className="cancel-btn text-sm md:text-lg mr-2"
+                iconName="close"
+                tooltipLabel={t('common.cancel', 'Cancel')}
+                clickHandler={() => {
+                  toggleMultipleSelections(false, 'songs');
+                  history.back();
+                }}
+              />
+            </>
+          )}
           <Button
             key={0}
             className="more-options-btn text-sm md:text-lg md:[&>.button-label-text]:hidden md:[&>.icon]:mr-0"
