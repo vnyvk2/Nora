@@ -74,6 +74,8 @@ function RouteComponent() {
     enabled: currentQueue.length > 0
   });
 
+  const queueData = useMemo(() => currentQueue.map((id) => ({ id })), [currentQueue]);
+
   const { data: queueInfo } = useQuery({
     ...queueQuery.info({
       queueType: queue.queues[viewingQueueIndex]?.metadata?.queueType ?? 'songs',
@@ -224,7 +226,6 @@ function RouteComponent() {
                   tooltipLabel={t('common.play', 'Play')}
                   clickHandler={() => {
                     manager.switchQueue(viewingQueueIndex);
-                    manager.getActiveQueue().moveToStart();
                   }}
                 />
               )}
@@ -392,7 +393,7 @@ function RouteComponent() {
                 >
                   {(droppableProvided) => (
                     <VirtualizedList
-                      data={queuedSongs}
+                      data={queueData}
                       fixedItemHeight={60}
                       ref={ListRef}
                       scrollerRef={droppableProvided.innerRef}
@@ -404,15 +405,19 @@ function RouteComponent() {
                           </div>
                         )
                       }}
-                      itemContent={(index, song) => {
+                      itemContent={(index, item) => {
+                        const songId = item.id;
+                        const song = queuedSongs?.find((s) => s.songId === songId);
+                        if (!song) return null;
+
                         return (
                           <Draggable
-                            draggableId={String(song.songId)}
+                            draggableId={`${song.songId}-${index}`}
                             index={index}
-                            key={song.songId}
+                            key={`${song.songId}-${index}`}
                           >
                             {(provided) => {
-                              const { multipleSelections: songIds } = multipleSelectionsData;
+                              const { multipleSelections: selectedSongIds } = multipleSelectionsData;
                               const isMultipleSelectionsEnabled =
                                 multipleSelectionsData.selectionType === 'songs' &&
                                 multipleSelectionsData.multipleSelections.length !== 1;
@@ -447,11 +452,11 @@ function RouteComponent() {
                                       handlerFunction: () => {
                                         const updatedQueue = currentQueue.filter((id) =>
                                           isMultipleSelectionsEnabled
-                                            ? !songIds.includes(id)
+                                            ? !selectedSongIds.includes(id)
                                             : id !== song.songId
                                         );
-                                        manager.queues[viewingQueueIndex].replaceQueue(updatedQueue, manager.queues[viewingQueueIndex].position, false);
-                                        dispatch({ type: 'UPDATE_QUEUE', data: { queues: manager.queues.map(q => q.toJSON()), currentQueueIndex: manager.activeQueueIndex } });
+                                        const queueToUpdate = manager.queues[viewingQueueIndex];
+                                        queueToUpdate.replaceQueue(updatedQueue, queueToUpdate.position, false);
                                         toggleMultipleSelections(false);
                                       }
                                     }

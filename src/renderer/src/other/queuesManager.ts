@@ -211,36 +211,77 @@ export class QueuesManager {
 
       if (!storeQueuesState) return;
 
-      const storeActiveIndex = storeQueuesState.currentQueueIndex;
-      const storeActiveQueue = storeQueuesState.queues[storeActiveIndex];
-      if (!storeActiveQueue) return;
+      let needsFullSync = false;
 
-      const activeQueue = this.getActiveQueue();
-      const queueSongIds = activeQueue.getAllSongIds();
-      const storeSongIds = storeActiveQueue.songIds;
+      // Check if queues length changed
+      if (this.queues.length !== storeQueuesState.queues.length) {
+        needsFullSync = true;
+      } else {
+        // Check if queues order or IDs changed
+        for (let i = 0; i < this.queues.length; i++) {
+          if (this.queues[i].metadata?.queueId !== storeQueuesState.queues[i].metadata?.queueId) {
+            needsFullSync = true;
+            break;
+          }
+        }
+      }
 
-      const queueChanged = JSON.stringify(queueSongIds) !== JSON.stringify(storeSongIds);
-      const positionChanged = activeQueue.position !== storeActiveQueue.position;
-      
-      const queuesLengthChanged = this.queues.length !== storeQueuesState.queues.length;
+      const indexChanged = this.activeQueueIndex !== storeQueuesState.currentQueueIndex;
 
-      if (queueChanged || positionChanged || queuesLengthChanged) {
+      // Check if any individual queue's content changed
+      let anyQueueContentChanged = false;
+      if (!needsFullSync) {
+        for (let i = 0; i < this.queues.length; i++) {
+          const q = this.queues[i];
+          const sq = storeQueuesState.queues[i];
+          if (
+            JSON.stringify(q.getAllSongIds()) !== JSON.stringify(sq.songIds) ||
+            q.position !== sq.position ||
+            !!q.queueBeforeShuffle !== !!sq.queueBeforeShuffle
+          ) {
+            anyQueueContentChanged = true;
+            break;
+          }
+        }
+      }
+
+      if (needsFullSync || indexChanged || anyQueueContentChanged) {
         this.isSyncingFromStore = true;
 
         try {
-          if (queuesLengthChanged) {
-            this.queues = storeQueuesState.queues.map((q) => PlayerQueue.fromJSON(q));
-            this.activeQueueIndex = storeActiveIndex;
+          if (needsFullSync) {
+            this.queues.forEach((q) => {
+              q.removeAllListeners();
+            });
+
+            this.queues = storeQueuesState.queues.map((qState) => {
+              return PlayerQueue.fromJSON(qState);
+            });
+            this.activeQueueIndex = storeQueuesState.currentQueueIndex;
             this.bindActiveQueueEvents();
             this.emit('queuesChanged');
-            this.emit('activeQueueChanged');
+            if (indexChanged) {
+              this.emit('activeQueueChanged');
+            }
           } else {
-             activeQueue.replaceQueue(
-              storeSongIds,
-              storeActiveQueue.position,
-              false,
-              storeActiveQueue.metadata
-            );
+            // Update contents of queues in place
+            for (let i = 0; i < this.queues.length; i++) {
+              const q = this.queues[i];
+              const sq = storeQueuesState.queues[i];
+              if (
+                JSON.stringify(q.getAllSongIds()) !== JSON.stringify(sq.songIds) ||
+                q.position !== sq.position ||
+                !!q.queueBeforeShuffle !== !!sq.queueBeforeShuffle
+              ) {
+                q.replaceQueue(sq.songIds, sq.position, false, sq.metadata);
+                q.queueBeforeShuffle = sq.queueBeforeShuffle;
+              }
+            }
+            if (indexChanged) {
+              this.activeQueueIndex = storeQueuesState.currentQueueIndex;
+              this.bindActiveQueueEvents();
+              this.emit('activeQueueChanged');
+            }
           }
         } finally {
           this.isSyncingFromStore = false;
