@@ -19,7 +19,7 @@ import calculateTimeFromSeconds from '@renderer/utils/calculateTimeFromSeconds';
 import { baseInfoPageSearchParamsSchema } from '@renderer/utils/zod/baseInfoPageSearchParamsSchema';
 import { getQueuesManager } from '@renderer/other/queuesManager';
 import { useQuery } from '@tanstack/react-query';
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useStore } from '@tanstack/react-store';
 import {
   useCallback,
@@ -39,6 +39,7 @@ export const Route = createFileRoute('/main-player/queue/')({
 });
 
 function RouteComponent() {
+  const navigate = useNavigate();
   const currentSongData = useStore(store, (state) => state.currentSongData);
   const isMultipleSelectionEnabled = useStore(
     store,
@@ -211,7 +212,23 @@ function RouteComponent() {
         <>
           <QueueTabs viewingQueueIndex={viewingQueueIndex} setViewingQueueIndex={setViewingQueueIndex} />
           <div className="title-container text-font-color-highlight dark:text-dark-font-color-highlight mt-2 mb-4 flex items-center justify-between pr-4 text-3xl font-medium">
-            {t('currentQueuePage.queue')}
+            <div className="flex items-center gap-4">
+              {viewingQueueIndex === queue.currentQueueIndex
+                ? t('currentQueuePage.queue', 'Currently Playing Queue')
+                : t('currentQueuePage.viewingQueue', 'Viewing Queue')}
+              {viewingQueueIndex !== queue.currentQueueIndex && currentQueue.length > 0 && (
+                <Button
+                  className="!m-0 flex h-10 w-10 items-center justify-center rounded-full bg-background-color-3 shadow-md hover:scale-105 transition-transform dark:bg-dark-background-color-3"
+                  iconName="play_arrow"
+                  iconClassName="text-2xl text-font-color-black dark:text-font-color-black"
+                  tooltipLabel={t('common.play', 'Play')}
+                  clickHandler={() => {
+                    manager.switchQueue(viewingQueueIndex);
+                    manager.getActiveQueue().moveToStart();
+                  }}
+                />
+              )}
+            </div>
             <div className="other-controls-container float-right flex">
               <Button
                 key={0}
@@ -270,6 +287,15 @@ function RouteComponent() {
                 }}
               />
               <Button
+                key="add-songs"
+                label={t('currentQueuePage.addSongs', 'Add Songs')}
+                className="add-songs-button text-sm"
+                iconName="add"
+                clickHandler={() => {
+                  navigate({ to: '/main-player/songs' });
+                }}
+              />
+              <Button
                 key={4}
                 label={t('currentQueuePage.clearQueue')}
                 className="clear-queue-button text-sm"
@@ -289,17 +315,6 @@ function RouteComponent() {
                 }}
               />
             </div>
-            {viewingQueueIndex !== manager.activeQueueIndex && (
-              <Button
-                className="ml-4 bg-background-color-3 dark:bg-dark-background-color-3 text-font-color-black dark:text-font-color-white px-4 py-2 rounded-full font-semibold transition-transform hover:scale-105"
-                iconName="play_arrow"
-                label={t('common.play', 'Play')}
-                clickHandler={() => {
-                  manager.switchQueue(viewingQueueIndex);
-                  manager.getActiveQueue().moveToStart();
-                }}
-              />
-            )}
           </div>
           {currentQueue.length > 0 && (
             <div className="queue-info-container text-font-color-black dark:text-font-color-white mb-6 ml-8 flex items-center">
@@ -456,6 +471,12 @@ function RouteComponent() {
           {currentQueue.length === 0 && (
             <div className="no-songs-container flex h-full w-full flex-col items-center justify-center text-center text-2xl text-[#ccc]">
               <Img src={NoSongsImage} className="mb-8 w-60" alt="" /> {t('currentQueuePage.empty')}
+              <Button
+                label={t('currentQueuePage.addSongs', 'Add Songs')}
+                iconName="add"
+                className="mt-6 bg-background-color-3! text-font-color-black! dark:bg-dark-background-color-3! dark:text-font-color-black px-8 py-3 text-lg"
+                clickHandler={() => navigate({ to: '/main-player/songs' })}
+              />
             </div>
           )}
         </>

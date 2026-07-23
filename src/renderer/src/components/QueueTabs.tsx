@@ -1,15 +1,17 @@
 import { useCallback, useContext, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useStore } from '@tanstack/react-store';
+import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd';
 
 import Button from './Button';
 import { AppUpdateContext } from '../contexts/AppUpdateContext';
-import { store, dispatch } from '../store/store';
+import { store } from '../store/store';
 import { getQueuesManager } from '../other/queuesManager';
+import RenameQueuePrompt from './PromptMenu/RenameQueuePrompt';
 
 interface QueueTabsProps {
   viewingQueueIndex: number;
-  setViewingQueueIndex: (index) => void;
+  setViewingQueueIndex: (index: number | ((prev: number) => number)) => void;
 }
 
 export default function QueueTabs({ viewingQueueIndex, setViewingQueueIndex }: QueueTabsProps) {
@@ -17,7 +19,7 @@ export default function QueueTabs({ viewingQueueIndex, setViewingQueueIndex }: Q
   const queueState = useStore(store, (state) => state.localStorage.queue);
   const manager = getQueuesManager();
   
-  const { updateContextMenuData, addNewNotifications } = useContext(AppUpdateContext);
+  const { updateContextMenuData, addNewNotifications, changePromptMenuData } = useContext(AppUpdateContext);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const handleSwitchQueue = useCallback((index: number) => {
@@ -47,11 +49,14 @@ export default function QueueTabs({ viewingQueueIndex, setViewingQueueIndex }: Q
   const handleDeleteQueue = useCallback((index: number) => {
     if (manager && manager.queues.length > 1) {
       manager.deleteQueue(index);
-      if (viewingQueueIndex === index) {
-        setViewingQueueIndex(Math.max(0, index - 1));
-      } else if (viewingQueueIndex > index) {
-        setViewingQueueIndex(viewingQueueIndex - 1);
-      }
+      setViewingQueueIndex((prev) => {
+        if (prev === index) {
+          return Math.max(0, index - 1);
+        } else if (prev > index) {
+          return prev - 1;
+        }
+        return prev;
+      });
       addNewNotifications([{
         id: `delete-queue-${Date.now()}`,
         content: t('currentQueuePage.queueDeleted', 'Queue deleted'),
@@ -64,65 +69,113 @@ export default function QueueTabs({ viewingQueueIndex, setViewingQueueIndex }: Q
         iconName: 'error'
       }]);
     }
-  }, [manager, viewingQueueIndex, setViewingQueueIndex, addNewNotifications, t]);
+  }, [manager, setViewingQueueIndex, addNewNotifications, t]);
+
+  const handleDragEnd = useCallback((result: DropResult) => {
+    if (!result.destination || !manager) return;
+
+    const sourceIndex = result.source.index;
+    const destinationIndex = result.destination.index;
+
+    if (sourceIndex === destinationIndex) return;
+
+    manager.reorderQueues(sourceIndex, destinationIndex);
+
+    setViewingQueueIndex((prev) => {
+      if (prev === sourceIndex) {
+        return destinationIndex;
+      } else if (sourceIndex < prev && destinationIndex >= prev) {
+        return prev - 1;
+      } else if (sourceIndex > prev && destinationIndex <= prev) {
+        return prev + 1;
+      }
+      return prev;
+    });
+  }, [manager, setViewingQueueIndex]);
 
   return (
     <div className="queue-tabs-container relative flex items-center w-full my-4 mb-8 bg-background-color-2/50 dark:bg-dark-background-color-2/50 rounded-full p-1 shadow-inner overflow-hidden">
-      <div 
-        ref={scrollContainerRef}
-        className="flex-1 overflow-x-auto flex items-center scrollbar-hide no-scrollbar space-x-1"
-        style={{ scrollBehavior: 'smooth' }}
-      >
-        {queueState.queues.map((q, index) => {
-          const isActive = index === queueState.currentQueueIndex;
-          const title = q.metadata?.title || (q.metadata?.queueType === 'songs' ? 'All Songs' : `Queue ${index + 1}`);
-          
-          return (
+      <DragDropContext onDragEnd={handleDragEnd}>
+        <Droppable droppableId="queue-tabs" direction="horizontal">
+          {(provided) => (
             <div 
-              key={index}
-              className={`flex-shrink-0 flex items-center rounded-full px-4 py-2 cursor-pointer transition-all duration-300 ease-in-out border
-                ${isActive 
-                  ? 'bg-background-color-3 dark:bg-dark-background-color-3 border-background-color-3 text-font-color-black dark:text-font-color-white shadow-md font-medium transform scale-100' 
-                  : 'bg-transparent border-transparent text-font-color-black/60 dark:text-font-color-white/60 hover:bg-background-color-3/40 dark:hover:bg-dark-background-color-3/40 transform scale-95 hover:scale-100 hover:text-font-color-black dark:hover:text-font-color-white'
-                }`}
-              onClick={() => handleSwitchQueue(index)}
-              onContextMenu={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                updateContextMenuData(true, [
-                  {
-                    label: t('currentQueuePage.renameQueue', 'Rename Queue'),
-                    iconName: 'edit',
-                    handlerFunction: () => {
-                      // We can dispatch an event or use a prompt to rename the queue
-                      // For now, we will use window.prompt as a quick fallback if prompt component isn't ready
-                      const newTitle = window.prompt('Enter new queue name:', title);
-                      if (newTitle && manager) {
-                        manager.queues[index].setMetadata(manager.queues[index].metadata?.queueId, manager.queues[index].metadata?.queueType, newTitle);
-                        // Save changes
-                        dispatch({ type: 'UPDATE_QUEUE', data: { queues: manager.queues.map(queue => queue.toJSON()), currentQueueIndex: manager.activeQueueIndex } });
-                      }
-                    }
-                  },
-                  {
-                    label: t('currentQueuePage.deleteQueue', 'Delete Queue'),
-                    iconName: 'delete',
-                    isDisabled: queueState.queues.length <= 1,
-                    handlerFunction: () => handleDeleteQueue(index)
-                  }
-                ], e.pageX, e.pageY);
+              ref={(el) => {
+                provided.innerRef(el);
+                if (el) {
+                  // @ts-ignore
+                  scrollContainerRef.current = el;
+                }
               }}
+              {...provided.droppableProps}
+              className="flex-1 overflow-x-auto flex items-center scrollbar-hide no-scrollbar"
+              style={{ scrollBehavior: 'smooth' }}
             >
-              {isActive && (
-                <span className="material-icons-round text-sm mr-2 animate-pulse text-font-color-highlight dark:text-dark-font-color-highlight">
-                  equalizer
-                </span>
-              )}
-              <span className="truncate max-w-[150px]">{title}</span>
+              {queueState.queues.map((q, index) => {
+                const isActive = index === queueState.currentQueueIndex;
+                const isViewing = index === viewingQueueIndex;
+                const title = q.metadata?.title || (q.metadata?.queueType === 'songs' ? 'All Songs' : `Queue ${index + 1}`);
+                
+                return (
+                  <Draggable key={`queue-tab-${index}`} draggableId={`queue-tab-${index}`} index={index}>
+                    {(provided, snapshot) => (
+                      <div 
+                        ref={provided.innerRef}
+                        {...provided.draggableProps}
+                        {...provided.dragHandleProps}
+                        style={provided.draggableProps.style}
+                        className={`mr-2 flex-shrink-0 flex items-center rounded-full px-4 py-2 cursor-pointer transition-colors duration-300 ease-in-out border outline-hidden select-none
+                          ${isActive 
+                            ? 'bg-background-color-3 dark:bg-dark-background-color-3 border-background-color-3 text-font-color-black dark:text-font-color-white font-medium' 
+                            : 'bg-transparent border-transparent text-font-color-black/60 dark:text-font-color-white/60 hover:bg-background-color-3/40 dark:hover:bg-dark-background-color-3/40 hover:text-font-color-black dark:hover:text-font-color-white'
+                          } ${isViewing && !isActive ? 'ring-1 ring-background-color-3 dark:ring-dark-background-color-3' : ''} 
+                          ${snapshot.isDragging ? 'shadow-2xl ring-2 ring-background-color-3 dark:ring-dark-background-color-3 opacity-90' : 'shadow-md'}
+                        `}
+                        onClick={() => handleSwitchQueue(index)}
+                        onContextMenu={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          updateContextMenuData(true, [
+                            {
+                              label: t('currentQueuePage.renameQueue', 'Rename Queue'),
+                              iconName: 'edit',
+                              handlerFunction: () => {
+                                changePromptMenuData(
+                                  true,
+                                  <RenameQueuePrompt queueIndex={index} currentName={title} />,
+                                  'rename-queue-prompt'
+                                );
+                              }
+                            },
+                            {
+                              label: t('currentQueuePage.deleteQueue', 'Delete Queue'),
+                              iconName: 'delete',
+                              isDisabled: queueState.queues.length <= 1,
+                              handlerFunction: () => handleDeleteQueue(index)
+                            }
+                          ], e.pageX, e.pageY);
+                        }}
+                      >
+                        {isActive && (
+                          <span className="material-icons-round text-sm mr-2 animate-pulse text-font-color-highlight dark:text-dark-font-color-highlight" title="Currently Playing">
+                            equalizer
+                          </span>
+                        )}
+                        {!isActive && isViewing && (
+                          <span className="material-icons-round text-sm mr-2 text-font-color-black/40 dark:text-font-color-white/40" title="Viewing">
+                            visibility
+                          </span>
+                        )}
+                        <span className="truncate max-w-[150px]">{title}</span>
+                      </div>
+                    )}
+                  </Draggable>
+                );
+              })}
+              {provided.placeholder}
             </div>
-          );
-        })}
-      </div>
+          )}
+        </Droppable>
+      </DragDropContext>
       
       <div className="flex-shrink-0 border-l border-background-color-3 dark:border-dark-background-color-3 ml-2 pl-2">
         <Button

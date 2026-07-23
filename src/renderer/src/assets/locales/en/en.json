@@ -544,6 +544,7 @@
 
   "currentQueuePage": {
     "queue": "Currently Playing Queue",
+    "viewingQueue": "Viewing Queue",
     "folderWithName": "{{name}} Folder",
     "enableAutoScrolling": "Enable Auto Scrolling",
     "disableAutoScrolling": "Disable Auto Scrolling",

@@ -139,6 +139,34 @@ export class QueuesManager {
     }
   }
 
+  reorderQueues(startIndex: number, endIndex: number) {
+    if (
+      startIndex >= 0 && startIndex < this.queues.length &&
+      endIndex >= 0 && endIndex < this.queues.length &&
+      startIndex !== endIndex
+    ) {
+      const activeQueueWasReordered = this.activeQueueIndex === startIndex;
+      const result = Array.from(this.queues);
+      const [removed] = result.splice(startIndex, 1);
+      result.splice(endIndex, 0, removed);
+      this.queues = result;
+      
+      // Update activeQueueIndex to reflect the shift
+      if (activeQueueWasReordered) {
+        this.activeQueueIndex = endIndex;
+      } else {
+        if (startIndex < this.activeQueueIndex && endIndex >= this.activeQueueIndex) {
+          this.activeQueueIndex--;
+        } else if (startIndex > this.activeQueueIndex && endIndex <= this.activeQueueIndex) {
+          this.activeQueueIndex++;
+        }
+      }
+
+      this.emit('queuesChanged');
+      this.triggerStoreSync();
+    }
+  }
+
   private bindActiveQueueEvents() {
     this.activeQueueUnsubscribe.forEach((unsub) => unsub());
     this.activeQueueUnsubscribe = [];
