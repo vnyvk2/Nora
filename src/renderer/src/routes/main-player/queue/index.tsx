@@ -53,16 +53,18 @@ function RouteComponent() {
   const [viewingQueueIndex, setViewingQueueIndex] = useState(queue.currentQueueIndex);
 
   // Sync viewingQueueIndex if active queue is deleted or changed externally
-  useEffect(() => {
-    if (viewingQueueIndex >= queue.queues.length) {
-      setViewingQueueIndex(queue.queues.length - 1);
-    }
-  }, [queue.queues.length, viewingQueueIndex]);
+  const prevActiveQueueRef = useRef(queue.currentQueueIndex);
 
-  const currentQueue = useStore(
-    store, 
-    (state) => state.localStorage.queue.queues[viewingQueueIndex]?.songIds || []
-  );
+  useEffect(() => {
+    if (prevActiveQueueRef.current !== queue.currentQueueIndex) {
+      setViewingQueueIndex(queue.currentQueueIndex);
+      prevActiveQueueRef.current = queue.currentQueueIndex;
+    } else if (viewingQueueIndex >= queue.queues.length) {
+      setViewingQueueIndex(Math.max(0, queue.queues.length - 1));
+    }
+  }, [queue.currentQueueIndex, queue.queues.length, viewingQueueIndex]);
+
+  const currentQueue = queue.queues[viewingQueueIndex]?.songIds || [];
 
   const { addNewNotifications, updateContextMenuData, toggleMultipleSelections } =
     useContext(AppUpdateContext);

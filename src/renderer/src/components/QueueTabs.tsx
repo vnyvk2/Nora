@@ -46,9 +46,9 @@ export default function QueueTabs({ viewingQueueIndex, setViewingQueueIndex }: Q
     }
   }, [manager, setViewingQueueIndex, addNewNotifications, t]);
 
-  const handleDeleteQueue = useCallback((index: number) => {
+  const handleDeleteQueue = useCallback((queueId: string, index: number) => {
     if (manager && manager.queues.length > 1) {
-      manager.deleteQueue(index);
+      manager.deleteQueue(queueId);
       setViewingQueueIndex((prev) => {
         if (prev === index) {
           return Math.max(0, index - 1);
@@ -141,7 +141,7 @@ export default function QueueTabs({ viewingQueueIndex, setViewingQueueIndex }: Q
                               handlerFunction: () => {
                                 changePromptMenuData(
                                   true,
-                                  <RenameQueuePrompt queueIndex={index} currentName={title} />,
+                                  <RenameQueuePrompt queueId={q.id} currentName={title} />,
                                   'rename-queue-prompt'
                                 );
                               }
@@ -150,7 +150,7 @@ export default function QueueTabs({ viewingQueueIndex, setViewingQueueIndex }: Q
                               label: t('currentQueuePage.deleteQueue', 'Delete Queue'),
                               iconName: 'delete',
                               isDisabled: queueState.queues.length <= 1,
-                              handlerFunction: () => handleDeleteQueue(index)
+                              handlerFunction: () => handleDeleteQueue(q.id, index)
                             }
                           ], e.pageX, e.pageY);
                         }}
