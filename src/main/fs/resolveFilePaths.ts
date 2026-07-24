@@ -85,16 +85,14 @@ export const parseSongArtworks = (
   const isArtworkAvailable = artworks.length > 0;
 
   if (isArtworkAvailable) {
-    const highResImage = artworks.find((artwork) => artwork.width >= 500 && artwork.height >= 500);
-    const lowResImage = artworks.find((artwork) => artwork.width < 500 && artwork.height < 500);
+    const highResImage = artworks.find((artwork) => artwork.width >= 500 && artwork.height >= 500) || artworks[0];
+    const lowResImage = artworks.find((artwork) => artwork.width < 500 && artwork.height < 500) || artworks[0];
 
-    if (highResImage && lowResImage) {
-      return {
-        isDefaultArtwork: !isArtworkAvailable,
-        artworkPath: joinPath(FILE_URL, highResImage.path) + timestampStr,
-        optimizedArtworkPath: joinPath(FILE_URL, lowResImage.path) + timestampStr
-      };
-    }
+    return {
+      isDefaultArtwork: false,
+      artworkPath: joinPath(FILE_URL, highResImage.path) + timestampStr,
+      optimizedArtworkPath: joinPath(FILE_URL, lowResImage.path) + timestampStr
+    };
   }
 
   const defaultPath = joinPath(FILE_URL, songCoverImage) + timestampStr;
@@ -143,15 +141,13 @@ export const parseArtistArtworks = (
   const isArtworkAvailable = artworks.length > 0;
 
   if (isArtworkAvailable) {
-    const highResImage = artworks.find((artwork) => artwork.width >= 500 && artwork.height >= 500);
+    const highResImage = artworks.find((artwork) => artwork.width >= 500 && artwork.height >= 500) || artworks[0];
 
-    if (highResImage) {
-      return {
-        isDefaultArtwork: !isArtworkAvailable,
-        artworkPath: joinPath(FILE_URL, highResImage.path) + timestampStr,
-        optimizedArtworkPath: joinPath(FILE_URL, highResImage.path) + timestampStr
-      };
-    }
+    return {
+      isDefaultArtwork: false,
+      artworkPath: joinPath(FILE_URL, highResImage.path) + timestampStr,
+      optimizedArtworkPath: joinPath(FILE_URL, highResImage.path) + timestampStr
+    };
   }
 
   const defaultPath = joinPath(FILE_URL, artistCoverImage) + timestampStr;
@@ -225,15 +221,13 @@ export const parseAlbumArtworks = (
   const isArtworkAvailable = artworks.length > 0;
 
   if (isArtworkAvailable) {
-    const highResImage = artworks.find((artwork) => artwork.width >= 500 && artwork.height >= 500);
+    const highResImage = artworks.find((artwork) => artwork.width >= 500 && artwork.height >= 500) || artworks[0];
 
-    if (highResImage) {
-      return {
-        isDefaultArtwork: !isArtworkAvailable,
-        artworkPath: joinPath(FILE_URL, highResImage.path) + timestampStr,
-        optimizedArtworkPath: joinPath(FILE_URL, highResImage.path) + timestampStr
-      };
-    }
+    return {
+      isDefaultArtwork: false,
+      artworkPath: joinPath(FILE_URL, highResImage.path) + timestampStr,
+      optimizedArtworkPath: joinPath(FILE_URL, highResImage.path) + timestampStr
+    };
   }
 
   const defaultPath = joinPath(FILE_URL, albumCoverImage) + timestampStr;
@@ -282,15 +276,13 @@ export const parseGenreArtworks = (
   const isArtworkAvailable = artworks.length > 0;
 
   if (isArtworkAvailable) {
-    const highResImage = artworks.find((artwork) => artwork.width >= 500 && artwork.height >= 500);
+    const highResImage = artworks.find((artwork) => artwork.width >= 500 && artwork.height >= 500) || artworks[0];
 
-    if (highResImage) {
-      return {
-        isDefaultArtwork: !isArtworkAvailable,
-        artworkPath: joinPath(FILE_URL, highResImage.path) + timestampStr,
-        optimizedArtworkPath: joinPath(FILE_URL, highResImage.path) + timestampStr
-      };
-    }
+    return {
+      isDefaultArtwork: false,
+      artworkPath: joinPath(FILE_URL, highResImage.path) + timestampStr,
+      optimizedArtworkPath: joinPath(FILE_URL, highResImage.path) + timestampStr
+    };
   }
 
   const defaultPath = joinPath(FILE_URL, songCoverImage) + timestampStr;
@@ -338,15 +330,13 @@ export const parsePlaylistArtworks = (
   const isArtworkAvailable = artworks.length > 0;
 
   if (isArtworkAvailable) {
-    const highResImage = artworks.find((artwork) => artwork.width >= 500 && artwork.height >= 500);
+    const highResImage = artworks.find((artwork) => artwork.width >= 500 && artwork.height >= 500) || artworks[0];
 
-    if (highResImage) {
-      return {
-        isDefaultArtwork: !isArtworkAvailable,
-        artworkPath: joinPath(FILE_URL, highResImage.path) + timestampStr,
-        optimizedArtworkPath: joinPath(FILE_URL, highResImage.path) + timestampStr
-      };
-    }
+    return {
+      isDefaultArtwork: false,
+      artworkPath: joinPath(FILE_URL, highResImage.path) + timestampStr,
+      optimizedArtworkPath: joinPath(FILE_URL, highResImage.path) + timestampStr
+    };
   }
 
   const defaultPath = joinPath(FILE_URL, playlistCoverImage) + timestampStr;

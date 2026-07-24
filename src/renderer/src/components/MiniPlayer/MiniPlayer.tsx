@@ -102,10 +102,12 @@ export default function MiniPlayer(props: MiniPlayerProps) {
     };
   }, [manageKeyboardShortcuts]);
 
+  const queueLength = queue.queues[queue.currentQueueIndex]?.songIds?.length ?? 0;
+
   useEffect(() => {
-    window.api.miniPlayer.toggleMiniPlayerQueue(isQueueVisible, queue.queues[queue.currentQueueIndex].songIds.length);
+    window.api.miniPlayer.toggleMiniPlayerQueue(isQueueVisible, queueLength);
     if (!isQueueVisible) setQueueDirection('down');
-  }, [isQueueVisible, queue.queues[queue.currentQueueIndex].songIds.length]);
+  }, [isQueueVisible, queueLength]);
 
   // Listen for queue direction changes from main process
   useEffect(() => {

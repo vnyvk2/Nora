@@ -82,7 +82,14 @@ export class QueuesManager {
   }
 
   createQueue(name?: string, songIds: number[] = []): PlayerQueue {
-    const newQueue = new PlayerQueue(songIds, 0, undefined, { title: name || `Queue ${this.queues.length + 1}` });
+    let queueTitle = name || `Queue ${this.queues.length + 1}`;
+
+    if (this.queues.length === 1 && this.queues[0].songIds.length === 0) {
+      this.queues = [];
+      queueTitle = name || 'Queue 1';
+    }
+
+    const newQueue = new PlayerQueue(songIds, 0, undefined, { title: queueTitle });
     this.queues.push(newQueue);
     this.emit('queuesChanged');
     this.triggerStoreSync();
@@ -108,13 +115,13 @@ export class QueuesManager {
 
       let activeQueueChanged = false;
 
-      if (this.activeQueueIndex >= this.queues.length) {
-        this.activeQueueIndex = this.queues.length - 1;
+      if (index === this.activeQueueIndex) {
         activeQueueChanged = true;
+        if (this.activeQueueIndex >= this.queues.length) {
+          this.activeQueueIndex = Math.max(0, this.queues.length - 1);
+        }
       } else if (index < this.activeQueueIndex) {
         this.activeQueueIndex -= 1;
-      } else if (index === this.activeQueueIndex) {
-        activeQueueChanged = true;
       }
 
       this.bindActiveQueueEvents();

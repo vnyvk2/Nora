@@ -33,15 +33,21 @@ const QueueContainer = (props: Props) => {
 
   const manager = getQueuesManager();
 
+  const currentQueue = queue.queues[viewingQueueIndex];
+  const songIds = currentQueue?.songIds || [];
+
   const { data: queuedSongs } = useQuery({
-    ...songQuery.queue(queue.queues[viewingQueueIndex].songIds),
-    enabled: queue.queues[viewingQueueIndex].songIds.length > 0 && isQueueVisible
+    ...songQuery.queue(songIds),
+    enabled: songIds.length > 0 && isQueueVisible
   });
 
   // Auto-scroll to the currently playing song when the queue opens
   useEffect(() => {
+    const activeQueue = queue.queues[queue.currentQueueIndex];
+    const activeSongIds = activeQueue?.songIds || [];
+
     if (isQueueVisible && queuedSongs && listRef.current && viewingQueueIndex === queue.currentQueueIndex) {
-      const activeIndex = queue.queues[queue.currentQueueIndex].songIds.indexOf(currentSongId);
+      const activeIndex = activeSongIds.indexOf(currentSongId);
       if (activeIndex >= 0) {
         // Each item is ~52px tall. Scroll so the active item is centered.
         const itemHeight = 52;
@@ -52,7 +58,7 @@ const QueueContainer = (props: Props) => {
         });
       }
     }
-  }, [isQueueVisible, queuedSongs, currentSongId, queue.queues[queue.currentQueueIndex].songIds, viewingQueueIndex, queue.currentQueueIndex]);
+  }, [isQueueVisible, queuedSongs, currentSongId, queue.queues[queue.currentQueueIndex]?.songIds, viewingQueueIndex, queue.currentQueueIndex]);
 
   const handleSongClick = useCallback(
     (index: number) => {
@@ -76,13 +82,13 @@ const QueueContainer = (props: Props) => {
   const songItems = useMemo(() => {
     if (!queuedSongs) return null;
     
-    const currentQueueSongIds = queue.queues[viewingQueueIndex].songIds;
+    const currentQueueSongIds = queue.queues[viewingQueueIndex]?.songIds || [];
 
     return currentQueueSongIds.map((id, index) => {
       const song = queuedSongs.find(s => s.songId === id);
       if (!song) return null;
 
-      const isActivePosition = viewingQueueIndex === queue.currentQueueIndex && index === queue.queues[queue.currentQueueIndex].position;
+      const isActivePosition = viewingQueueIndex === queue.currentQueueIndex && index === queue.queues[queue.currentQueueIndex]?.position;
       
       const duration = calculateTimeFromSeconds(song.duration);
 
@@ -90,7 +96,7 @@ const QueueContainer = (props: Props) => {
         <button
           key={`${id}-${index}`}
           type="button"
-          className={`queue-song-item flex w-full cursor-pointer items-center gap-3 rounded-md px-3 py-2 text-left transition-colors duration-150 ${
+          className={`queue-song-item flex w-full h-[52px] min-h-[52px] overflow-hidden cursor-pointer items-center gap-3 rounded-md px-3 py-2 text-left transition-colors duration-150 ${
             isActivePosition
               ? 'bg-font-color-highlight/20 dark:bg-dark-font-color-highlight/20'
               : 'hover:bg-font-color-white/10'
@@ -170,7 +176,7 @@ const QueueContainer = (props: Props) => {
             <span className="text-font-color-white text-xs font-semibold uppercase tracking-wider opacity-60">
               {viewingQueueIndex === queue.currentQueueIndex 
                  ? t('currentQueuePage.queue', 'Currently Playing Queue')
-                 : (queue.queues[viewingQueueIndex].metadata?.title || (queue.queues[viewingQueueIndex].metadata?.queueType === 'songs' ? 'All Songs' : `Queue ${viewingQueueIndex + 1}`))}
+                 : (queue.queues[viewingQueueIndex]?.metadata?.title || (queue.queues[viewingQueueIndex]?.metadata?.queueType === 'songs' ? 'All Songs' : `Queue ${viewingQueueIndex + 1}`))}
             </span>
             <button 
               className="text-font-color-white/60 hover:text-font-color-white focus-visible:outline-none disabled:opacity-30 disabled:hover:text-font-color-white/60"
@@ -179,7 +185,7 @@ const QueueContainer = (props: Props) => {
             >
               <span className="material-icons-round text-sm">chevron_right</span>
             </button>
-            {viewingQueueIndex !== queue.currentQueueIndex && queue.queues[viewingQueueIndex].songIds.length > 0 && (
+            {viewingQueueIndex !== queue.currentQueueIndex && (queue.queues[viewingQueueIndex]?.songIds?.length ?? 0) > 0 && (
               <button 
                 className="ml-2 flex items-center justify-center bg-font-color-highlight/20 dark:bg-dark-font-color-highlight/20 text-font-color-highlight dark:text-dark-font-color-highlight rounded-full h-5 w-5 hover:bg-font-color-highlight hover:text-font-color-white focus-visible:outline-none transition-colors"
                 title={t('common.play', 'Play')}
