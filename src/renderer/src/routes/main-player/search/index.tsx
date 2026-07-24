@@ -79,13 +79,8 @@ function SearchPage() {
 
   useEffect(() => {
     return () => {
-      setTimeout(() => {
-        const url = new URL(window.location.href);
-        const newAction = url.searchParams.get('action');
-        if (newAction !== 'add-to-queue') {
-          toggleMultipleSelections(false, 'songs');
-        }
-      }, 50);
+      // Clean up multiple selections state when unmounting
+      toggleMultipleSelections(false, 'songs');
     };
   }, [toggleMultipleSelections]);
 
@@ -205,18 +200,14 @@ function SearchPage() {
                 className="add-to-queue-btn text-sm md:text-lg bg-background-color-3 dark:bg-dark-background-color-3 px-6 py-2 rounded-full font-semibold ml-4 flex items-center shadow-sm"
                 iconName="add"
                 label={t('currentQueuePage.addSongs', 'Add to Queue')}
-                isDisabled={multipleSelectionsData.multipleSelections.length === 0}
+                isDisabled={multipleSelectionsData.multipleSelections.length === 0 || multipleSelectionsData.selectionType !== 'songs'}
                 clickHandler={() => {
                   const manager = getQueuesManager();
                   const targetQueueIndex = queueIndex ?? manager.activeQueueIndex;
-                  const targetQueue = manager.queues[targetQueueIndex];
-                  if (targetQueue) {
-                    targetQueue.addSongIdsToEnd(multipleSelectionsData.multipleSelections as number[]);
-                    dispatch({ type: 'UPDATE_QUEUE', data: { queues: manager.queues.map(q => q.toJSON()), currentQueueIndex: manager.activeQueueIndex } });
-                    
-                    toggleMultipleSelections(false, 'songs');
-                    navigate({ search: (prev) => ({ ...prev, action: undefined, queueIndex: undefined }) });
-                  }
+                  manager.addSongsToQueue(targetQueueIndex, multipleSelectionsData.multipleSelections as number[]);
+                  
+                  toggleMultipleSelections(false, 'songs');
+                  navigate({ search: (prev) => ({ ...prev, action: undefined, queueIndex: undefined }) });
                 }}
               />
               <Button

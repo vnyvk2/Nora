@@ -146,6 +146,15 @@ export class QueuesManager {
     }
   }
 
+  addSongsToQueue(index: number, songIds: number[]) {
+    if (index >= 0 && index < this.queues.length) {
+      const queue = this.queues[index];
+      queue.addSongIdsToEnd(songIds);
+      this.emit('queuesChanged');
+      this.triggerStoreSync();
+    }
+  }
+
   reorderQueues(startIndex: number, endIndex: number) {
     if (
       startIndex >= 0 && startIndex < this.queues.length &&
