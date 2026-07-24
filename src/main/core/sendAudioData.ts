@@ -109,7 +109,8 @@ const sendAudioData = async (songId: number): Promise<AudioPlayerData> => {
         isBlacklisted
       };
 
-      addSongToPlayHistory(songId);
+      // Temporarily commenting this out to test if it causes a PGlite deadlock
+      // addSongToPlayHistory(songId);
 
       const now = Date.now();
       setDiscordRpcActivity({

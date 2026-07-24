@@ -160,7 +160,18 @@ function RouteComponent() {
     updatedQueue.splice(result.destination.index, 0, item);
 
     // Update the currently viewed queue
-    manager.queues[viewingQueueIndex].replaceQueue(updatedQueue, manager.queues[viewingQueueIndex].position, false);
+    const queueToUpdate = manager.queues[viewingQueueIndex];
+    let newPosition = queueToUpdate.position;
+
+    if (result.source.index === newPosition) {
+      newPosition = result.destination.index;
+    } else if (result.source.index < newPosition && result.destination.index >= newPosition) {
+      newPosition -= 1;
+    } else if (result.source.index > newPosition && result.destination.index <= newPosition) {
+      newPosition += 1;
+    }
+
+    queueToUpdate.replaceQueue(updatedQueue, newPosition, false);
     dispatch({ type: 'UPDATE_QUEUE', data: { queues: manager.queues.map(q => q.toJSON()), currentQueueIndex: manager.activeQueueIndex } });
     return undefined;
   };
@@ -222,11 +233,12 @@ function RouteComponent() {
           <div className="w-full mb-2 mt-1 pr-4">
             <QueueTabs viewingQueueIndex={viewingQueueIndex} setViewingQueueIndex={setViewingQueueIndex} />
           </div>
-          <div className="title-container text-font-color-highlight dark:text-dark-font-color-highlight mb-4 flex items-center justify-between pr-4 text-3xl font-medium">
+          <div className="title-container text-font-color-highlight dark:text-dark-font-color-highlight mt-2 mb-4 flex items-center justify-between pr-4 text-3xl font-medium">
             <div className="flex items-center gap-4">
-              {viewingQueueIndex === queue.currentQueueIndex
-                ? t('currentQueuePage.queue', 'Currently Playing Queue')
-                : t('currentQueuePage.viewingQueue', 'Viewing Queue')}
+              {queue.queues[viewingQueueIndex]?.metadata?.title || (queue.queues[viewingQueueIndex]?.metadata?.queueType === 'songs' ? 'All Songs' : `Queue ${viewingQueueIndex + 1}`)}
+              {viewingQueueIndex === queue.currentQueueIndex && (
+                 <span className="material-icons-round text-sm text-font-color-highlight dark:text-dark-font-color-highlight ml-2" title="Currently Playing">equalizer</span>
+              )}
               {viewingQueueIndex !== queue.currentQueueIndex && currentQueue.length > 0 && (
                 <Button
                   className="!m-0 flex h-10 w-10 items-center justify-center rounded-full bg-background-color-3 shadow-md hover:scale-105 transition-transform dark:bg-dark-background-color-3"
