@@ -63,7 +63,8 @@ function SongsPage() {
     playSong,
     toggleMultipleSelections,
     updateContextMenuData,
-    changePromptMenuData
+    changePromptMenuData,
+    updateQueueData
   } = useContext(AppUpdateContext);
   const { t } = useTranslation();
   const {
@@ -161,10 +162,10 @@ function SongsPage() {
       const queueSongIds = songData
         .filter((song) => !song.isBlacklisted)
         .map((song) => song.songId);
-      createQueue(queueSongIds, 'songs', false, undefined, false);
-      playSong(currSongId, true);
+      createQueue(queueSongIds, 'songs', false, undefined, false, t('common.allSongs', 'All Songs'));
+      updateQueueData(queueSongIds.indexOf(currSongId), undefined, false, true);
     },
-    [songData, createQueue, playSong]
+    [songData, createQueue, updateQueueData, t]
   );
 
   // const parentRef = useRef<HTMLDivElement>(null);

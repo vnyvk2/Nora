@@ -20,14 +20,15 @@ export function useQueueManagement(dependencies: QueueManagementDependencies) {
       queueType: QueueTypes,
       isShuffleQueue = false,
       queueId?: string | number,
-      startPlaying = true
+      startPlaying = true,
+      queueTitle?: string
     ) => {
       if (newQueue.length === 0) {
         return console.error('Cannot create an empty queue.');
       }
 
-      const playerQueue = manager.createQueue(undefined, newQueue);
-      playerQueue.setMetadata(queueId, queueType);
+      const playerQueue = manager.createQueue(queueTitle, newQueue);
+      playerQueue.setMetadata(queueId, queueType, queueTitle);
 
       if (isShuffleQueue) {
         playerQueue.shuffle();
@@ -53,11 +54,9 @@ export function useQueueManagement(dependencies: QueueManagementDependencies) {
       const playerQueue = getActiveQueue();
       
       if (queue) {
-        playerQueue.songIds = queue;
-      }
-      
-      if (currentSongIndex !== undefined) {
-        playerQueue.position = currentSongIndex;
+        playerQueue.replaceQueue(queue, currentSongIndex ?? playerQueue.position, false);
+      } else if (currentSongIndex !== undefined) {
+        playerQueue.moveToPosition(currentSongIndex);
       }
       
       if (isShuffleQueue) {
@@ -71,10 +70,8 @@ export function useQueueManagement(dependencies: QueueManagementDependencies) {
       if (playCurrentSongIndex && playerQueue.currentSongId) {
         playSong(playerQueue.currentSongId, true);
       }
-      
-      storage.queue.setQueue({ queues: manager.queues.map((q) => q.toJSON()), currentQueueIndex: manager.activeQueueIndex });
     },
-    [getActiveQueue, manager, playSong]
+    [getActiveQueue, playSong]
   );
 
   const toggleQueueShuffle = useCallback(

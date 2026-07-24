@@ -96,16 +96,16 @@ export class QueuesManager {
     this.queues.push(newQueue);
     this.bindQueueEvents(newQueue);
     
-    this.emit('queuesChanged');
     this.triggerStoreSync();
+    this.emit('queuesChanged');
     return newQueue;
   }
 
   switchQueue(index: number) {
-    if (index >= 0 && index < this.queues.length && index !== this.activeQueueIndex) {
+    if (index >= 0 && index < this.queues.length) {
       this.activeQueueIndex = index;
-      this.emit('activeQueueChanged');
       this.triggerStoreSync();
+      this.emit('activeQueueChanged');
     }
   }
 
@@ -132,13 +132,12 @@ export class QueuesManager {
         this.activeQueueIndex -= 1;
       }
 
+      this.triggerStoreSync();
       this.emit('queuesChanged');
       
       if (activeQueueChanged) {
         this.emit('activeQueueChanged');
       }
-
-      this.triggerStoreSync();
     }
   }
 
@@ -181,8 +180,8 @@ export class QueuesManager {
         }
       }
 
-      this.emit('queuesChanged');
       this.triggerStoreSync();
+      this.emit('queuesChanged');
     }
   }
 

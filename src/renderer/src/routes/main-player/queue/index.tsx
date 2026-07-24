@@ -66,7 +66,7 @@ function RouteComponent() {
 
   const currentQueue = queue.queues[viewingQueueIndex]?.songIds || [];
 
-  const { addNewNotifications, updateContextMenuData, toggleMultipleSelections } =
+  const { addNewNotifications, updateContextMenuData, toggleMultipleSelections, playSong } =
     useContext(AppUpdateContext);
   const { t } = useTranslation();
   const { scrollTopOffset } = Route.useSearch();
@@ -449,6 +449,8 @@ function RouteComponent() {
                                       if (viewingQueueIndex !== manager.activeQueueIndex) {
                                         // Switching queue will trigger autoPlay with the new position
                                         manager.switchQueue(viewingQueueIndex);
+                                      } else {
+                                        playSong(_songId, true);
                                       }
                                     }
                                   }}
