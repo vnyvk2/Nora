@@ -204,7 +204,11 @@ function SearchPage() {
                 clickHandler={() => {
                   const manager = getQueuesManager();
                   const targetQueueIndex = queueIndex ?? manager.activeQueueIndex;
-                  manager.addSongsToQueue(targetQueueIndex, multipleSelectionsData.multipleSelections as number[]);
+                  const targetQueueId = manager.queues[targetQueueIndex]?.id;
+                  
+                  if (targetQueueId) {
+                    manager.addSongsToQueue(targetQueueId, multipleSelectionsData.multipleSelections as number[]);
+                  }
                   
                   toggleMultipleSelections(false, 'songs');
                   navigate({ search: (prev) => ({ ...prev, action: undefined, queueIndex: undefined }) });

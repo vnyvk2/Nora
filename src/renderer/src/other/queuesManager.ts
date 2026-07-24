@@ -29,7 +29,7 @@ export class QueuesManager {
   private isSettingUpSync = false;
   private isSyncingFromStore = false;
   private listeners: Map<QueuesManagerEvent, Set<QueuesManagerCallback>>;
-  private activeQueueUnsubscribe: (() => void)[] = [];
+  private queueListeners: Map<string, (() => void)[]> = new Map();
 
   constructor() {
     this.queues = [];
@@ -62,7 +62,7 @@ export class QueuesManager {
       this.activeQueueIndex = 0;
     }
 
-    this.bindActiveQueueEvents();
+    this.queues.forEach((q) => this.bindQueueEvents(q));
 
     if (!this.isSettingUpSync) {
       this.setupStoreSync();
@@ -71,7 +71,9 @@ export class QueuesManager {
 
   getActiveQueue(): PlayerQueue {
     if (this.queues.length === 0) {
-      this.queues.push(new PlayerQueue());
+      const newQueue = new PlayerQueue();
+      this.queues.push(newQueue);
+      this.bindQueueEvents(newQueue);
       this.activeQueueIndex = 0;
     }
     return this.queues[this.activeQueueIndex];
@@ -85,12 +87,15 @@ export class QueuesManager {
     let queueTitle = name || `Queue ${this.queues.length + 1}`;
 
     if (this.queues.length === 1 && this.queues[0].songIds.length === 0) {
+      this.unbindQueueEvents(this.queues[0]);
       this.queues = [];
       queueTitle = name || 'Queue 1';
     }
 
     const newQueue = new PlayerQueue(songIds, 0, undefined, { title: queueTitle });
     this.queues.push(newQueue);
+    this.bindQueueEvents(newQueue);
+    
     this.emit('queuesChanged');
     this.triggerStoreSync();
     return newQueue;
@@ -99,18 +104,21 @@ export class QueuesManager {
   switchQueue(index: number) {
     if (index >= 0 && index < this.queues.length && index !== this.activeQueueIndex) {
       this.activeQueueIndex = index;
-      this.bindActiveQueueEvents();
       this.emit('activeQueueChanged');
       this.triggerStoreSync();
     }
   }
 
-  deleteQueue(index: number) {
+  deleteQueue(queueId: string) {
+    const index = this.queues.findIndex((q) => q.id === queueId);
     if (index >= 0 && index < this.queues.length) {
-      this.queues.splice(index, 1);
+      const [removed] = this.queues.splice(index, 1);
+      this.unbindQueueEvents(removed);
 
       if (this.queues.length === 0) {
-        this.queues.push(new PlayerQueue());
+        const newQueue = new PlayerQueue();
+        this.queues.push(newQueue);
+        this.bindQueueEvents(newQueue);
       }
 
       let activeQueueChanged = false;
@@ -124,7 +132,6 @@ export class QueuesManager {
         this.activeQueueIndex -= 1;
       }
 
-      this.bindActiveQueueEvents();
       this.emit('queuesChanged');
       
       if (activeQueueChanged) {
@@ -135,23 +142,19 @@ export class QueuesManager {
     }
   }
 
-  renameQueue(index: number, newName: string) {
-    if (index >= 0 && index < this.queues.length) {
-      const queue = this.queues[index];
+  renameQueue(queueId: string, newName: string) {
+    const queue = this.queues.find((q) => q.id === queueId);
+    if (queue) {
       const metadata = queue.getMetadata();
       const updatedMetadata = { ...metadata, title: newName };
       queue.setMetadata(updatedMetadata.queueId, updatedMetadata.queueType, updatedMetadata.title);
-      this.emit('queuesChanged');
-      this.triggerStoreSync();
     }
   }
 
-  addSongsToQueue(index: number, songIds: number[]) {
-    if (index >= 0 && index < this.queues.length) {
-      const queue = this.queues[index];
+  addSongsToQueue(queueId: string, songIds: number[]) {
+    const queue = this.queues.find((q) => q.id === queueId);
+    if (queue) {
       queue.addSongIdsToEnd(songIds);
-      this.emit('queuesChanged');
-      this.triggerStoreSync();
     }
   }
 
@@ -183,18 +186,32 @@ export class QueuesManager {
     }
   }
 
-  private bindActiveQueueEvents() {
-    this.activeQueueUnsubscribe.forEach((unsub) => unsub());
-    this.activeQueueUnsubscribe = [];
+  private bindQueueEvents(queue: PlayerQueue) {
+    this.unbindQueueEvents(queue); // Ensure no double-binding
 
-    const queue = this.getActiveQueue();
+    const unsubs: (() => void)[] = [];
 
     const onChange = () => {
+      if (queue === this.getActiveQueue()) {
+        this.emit('activeQueueChanged');
+      }
+      this.emit('queuesChanged');
       this.triggerStoreSync();
     };
 
-    this.activeQueueUnsubscribe.push(queue.on('queueChange', onChange));
-    this.activeQueueUnsubscribe.push(queue.on('positionChange', onChange));
+    unsubs.push(queue.on('queueChange', onChange));
+    unsubs.push(queue.on('positionChange', onChange));
+    unsubs.push(queue.on('metadataChange', onChange));
+
+    this.queueListeners.set(queue.id, unsubs);
+  }
+
+  private unbindQueueEvents(queue: PlayerQueue) {
+    const unsubs = this.queueListeners.get(queue.id);
+    if (unsubs) {
+      unsubs.forEach((unsub) => unsub());
+      this.queueListeners.delete(queue.id);
+    }
   }
 
   private triggerStoreSync() {
@@ -235,7 +252,7 @@ export class QueuesManager {
       } else {
         // Check if queues order or IDs changed
         for (let i = 0; i < this.queues.length; i++) {
-          if (this.queues[i].metadata?.queueId !== storeQueuesState.queues[i].metadata?.queueId) {
+          if (this.queues[i].id !== storeQueuesState.queues[i].id) {
             needsFullSync = true;
             break;
           }
@@ -253,6 +270,7 @@ export class QueuesManager {
           if (
             JSON.stringify(q.getAllSongIds()) !== JSON.stringify(sq.songIds) ||
             q.position !== sq.position ||
+            q.metadata?.title !== sq.metadata?.title ||
             !!q.queueBeforeShuffle !== !!sq.queueBeforeShuffle
           ) {
             anyQueueContentChanged = true;
@@ -267,14 +285,16 @@ export class QueuesManager {
         try {
           if (needsFullSync) {
             this.queues.forEach((q) => {
+              this.unbindQueueEvents(q);
               q.removeAllListeners();
             });
 
             this.queues = storeQueuesState.queues.map((qState) => {
               return PlayerQueue.fromJSON(qState);
             });
+            this.queues.forEach((q) => this.bindQueueEvents(q));
+            
             this.activeQueueIndex = storeQueuesState.currentQueueIndex;
-            this.bindActiveQueueEvents();
             this.emit('queuesChanged');
             if (indexChanged) {
               this.emit('activeQueueChanged');
@@ -287,6 +307,7 @@ export class QueuesManager {
               if (
                 JSON.stringify(q.getAllSongIds()) !== JSON.stringify(sq.songIds) ||
                 q.position !== sq.position ||
+                q.metadata?.title !== sq.metadata?.title ||
                 !!q.queueBeforeShuffle !== !!sq.queueBeforeShuffle
               ) {
                 q.replaceQueue(sq.songIds, sq.position, false, sq.metadata);
@@ -295,7 +316,6 @@ export class QueuesManager {
             }
             if (indexChanged) {
               this.activeQueueIndex = storeQueuesState.currentQueueIndex;
-              this.bindActiveQueueEvents();
               this.emit('activeQueueChanged');
             }
           }
@@ -308,8 +328,7 @@ export class QueuesManager {
 
   removeAllListeners() {
     this.listeners.clear();
-    this.activeQueueUnsubscribe.forEach((unsub) => unsub());
-    this.activeQueueUnsubscribe = [];
+    this.queues.forEach((q) => this.unbindQueueEvents(q));
   }
 }
 

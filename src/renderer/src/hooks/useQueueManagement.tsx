@@ -33,11 +33,11 @@ export function useQueueManagement(dependencies: QueueManagementDependencies) {
         playerQueue.shuffle();
       }
 
+      manager.switchQueue(manager.queues.length - 1);
+
       if (startPlaying && playerQueue.currentSongId) {
         playSong(playerQueue.currentSongId as number, true);
       }
-      
-      manager.switchQueue(manager.queues.length - 1);
     },
     [manager, playSong]
   );
