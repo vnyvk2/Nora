@@ -219,8 +219,10 @@ function RouteComponent() {
     >
       {queueInfo && (
         <>
-          <QueueTabs viewingQueueIndex={viewingQueueIndex} setViewingQueueIndex={setViewingQueueIndex} />
-          <div className="title-container text-font-color-highlight dark:text-dark-font-color-highlight mt-2 mb-4 flex items-center justify-between pr-4 text-3xl font-medium">
+          <div className="w-full mb-2 mt-1 pr-4">
+            <QueueTabs viewingQueueIndex={viewingQueueIndex} setViewingQueueIndex={setViewingQueueIndex} />
+          </div>
+          <div className="title-container text-font-color-highlight dark:text-dark-font-color-highlight mb-4 flex items-center justify-between pr-4 text-3xl font-medium">
             <div className="flex items-center gap-4">
               {viewingQueueIndex === queue.currentQueueIndex
                 ? t('currentQueuePage.queue', 'Currently Playing Queue')

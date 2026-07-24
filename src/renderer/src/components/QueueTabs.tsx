@@ -40,7 +40,10 @@ export default function QueueTabs({ viewingQueueIndex, setViewingQueueIndex }: Q
       // Scroll to end
       setTimeout(() => {
         if (scrollContainerRef.current) {
-          scrollContainerRef.current.scrollLeft = scrollContainerRef.current.scrollWidth;
+          scrollContainerRef.current.scrollTo({
+            left: scrollContainerRef.current.scrollWidth,
+            behavior: 'smooth'
+          });
         }
       }, 100);
     }
@@ -94,7 +97,7 @@ export default function QueueTabs({ viewingQueueIndex, setViewingQueueIndex }: Q
   }, [manager, setViewingQueueIndex]);
 
   return (
-    <div className="queue-tabs-container relative flex items-center w-full my-4 mb-8 bg-background-color-2/50 dark:bg-dark-background-color-2/50 rounded-full p-1 shadow-inner overflow-hidden">
+    <div className="queue-tabs-container relative flex items-center w-full bg-background-color-2/50 dark:bg-dark-background-color-2/50 rounded-full p-1 shadow-inner overflow-hidden">
       <DragDropContext onDragEnd={handleDragEnd}>
         <Droppable droppableId="queue-tabs" direction="horizontal">
           {(provided) => (
@@ -108,7 +111,6 @@ export default function QueueTabs({ viewingQueueIndex, setViewingQueueIndex }: Q
               }}
               {...provided.droppableProps}
               className="flex-1 overflow-x-auto flex items-center scrollbar-hide no-scrollbar"
-              style={{ scrollBehavior: 'smooth' }}
             >
               {queueState.queues.map((q, index) => {
                 const isActive = index === queueState.currentQueueIndex;
@@ -116,7 +118,7 @@ export default function QueueTabs({ viewingQueueIndex, setViewingQueueIndex }: Q
                 const title = q.metadata?.title || (q.metadata?.queueType === 'songs' ? 'All Songs' : `Queue ${index + 1}`);
                 
                 return (
-                  <Draggable key={`queue-tab-${index}`} draggableId={`queue-tab-${index}`} index={index}>
+                  <Draggable key={q.id} draggableId={q.id} index={index}>
                     {(provided, snapshot) => (
                       <div 
                         ref={provided.innerRef}
